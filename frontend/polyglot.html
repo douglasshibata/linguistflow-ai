@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polyglot — AI-Powered Language Learning</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0b09; --bg2: #141310; --card: #1c1b17; --card2: #242320;
+    --fg: #f2ece0; --fg2: #c8c0b2; --muted: #7a7468;
+    --accent: #e8a838; --accent2: #d4763a; --accent3: #4ea87a;
+    --border: #2e2d28; --danger: #d44a4a; --success: #4ea87a;
+    --ai: #c084fc; --ai-bg: rgba(192,132,252,0.08); --ai-border: rgba(192,132,252,0.2);
+    --game: #4ea8d6; --game-bg: rgba(78,168,214,0.08); --game-border: rgba(78,168,214,0.2);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--fg); min-height: 100vh; overflow-x: hidden; }
+  h1,h2,h3,h4,h5 { font-family: 'Playfair Display', serif; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .bg-glow { position: fixed; top: -200px; right: -200px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(232,168,56,0.06) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+  .bg-glow2 { position: fixed; bottom: -300px; left: -200px; width: 700px; height: 700px; background: radial-gradient(circle, rgba(192,132,252,0.04) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+
+  .lang-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px 24px; cursor: pointer; transition: all 0.35s cubic-bezier(0.4,0,0.2,1); position: relative; overflow: hidden; }
+  .lang-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transform: scaleX(0); transform-origin: left; transition: transform 0.4s cubic-bezier(0.4,0,0.2,1); }
+  .lang-card:hover::before { transform: scaleX(1); }
+  .lang-card:hover { border-color: var(--accent); transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 60px rgba(232,168,56,0.06); }
+
+  .module-btn { display: flex; align-items: center; gap: 12px; padding: 11px 16px; border-radius: 10px; cursor: pointer; transition: all 0.25s; color: var(--fg2); font-size: 13px; font-weight: 500; border: 1px solid transparent; width: 100%; text-align: left; background: none; }
+  .module-btn:hover { background: var(--card2); color: var(--fg); }
+  .module-btn.active { background: rgba(232,168,56,0.1); color: var(--accent); border-color: rgba(232,168,56,0.2); }
+  .module-btn.ai-mod.active { background: var(--ai-bg); color: var(--ai); border-color: var(--ai-border); }
+  .module-btn i { width: 18px; text-align: center; font-size: 14px; }
+
+  .content-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 16px; transition: border-color 0.3s; }
+  .vocab-card { background: var(--card2); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; cursor: pointer; }
+  .vocab-card:hover { border-color: var(--accent); background: rgba(232,168,56,0.05); transform: translateX(4px); }
+
+  .speak-btn { width: 38px; height: 38px; border-radius: 50%; background: rgba(232,168,56,0.15); border: 1px solid rgba(232,168,56,0.3); color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.25s; flex-shrink: 0; }
+  .speak-btn:hover { background: var(--accent); color: var(--bg); transform: scale(1.1); }
+  .speak-btn.speaking { animation: pulse-speak 0.8s ease-in-out infinite; }
+  .speak-btn.recording { background: var(--danger); color: white; border-color: var(--danger); animation: pulse-danger 0.8s ease-in-out infinite; }
+
+  @keyframes pulse-speak { 0%, 100% { box-shadow: 0 0 0 0 rgba(232,168,56,0.4); } 50% { box-shadow: 0 0 0 12px rgba(232,168,56,0); } }
+  @keyframes pulse-danger { 0%, 100% { box-shadow: 0 0 0 0 rgba(212,74,74,0.4); } 50% { box-shadow: 0 0 0 12px rgba(212,74,74,0); } }
+
+  .grammar-rule { background: var(--card2); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; padding: 20px 24px; margin-bottom: 14px; }
+  .phrase-part { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 8px; margin: 3px; font-size: 15px; }
+  .dialogue-bubble { max-width: 80%; padding: 14px 18px; border-radius: 16px; margin-bottom: 12px; position: relative; line-height: 1.6; cursor: pointer; }
+  .dialogue-left { background: var(--card2); border: 1px solid var(--border); border-bottom-left-radius: 4px; align-self: flex-start; }
+  .dialogue-right { background: rgba(232,168,56,0.12); border: 1px solid rgba(232,168,56,0.2); border-bottom-right-radius: 4px; align-self: flex-end; }
+  .writing-char { width: 68px; height: 68px; display: flex; align-items: center; justify-content: center; background: var(--card2); border: 1px solid var(--border); border-radius: 12px; font-size: 26px; cursor: pointer; transition: all 0.3s; position: relative; }
+  .writing-char:hover { border-color: var(--accent); background: rgba(232,168,56,0.08); transform: translateY(-3px); }
+  .writing-char .char-label { position: absolute; bottom: -20px; font-size: 10px; color: var(--muted); white-space: nowrap; }
+
+  .quiz-option { padding: 12px 18px; background: var(--card2); border: 2px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.25s; font-size: 14px; text-align: left; width: 100%; color: var(--fg); }
+  .quiz-option:hover { border-color: var(--accent); background: rgba(232,168,56,0.05); }
+  .quiz-option.correct { border-color: var(--success); background: rgba(78,168,122,0.12); }
+  .quiz-option.wrong { border-color: var(--danger); background: rgba(212,74,74,0.12); }
+  .progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .nav-arrow { padding: 8px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--fg2); cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.25s; }
+  .nav-arrow:hover { border-color: var(--accent); color: var(--accent); }
+  .nav-arrow:disabled { opacity: 0.3; cursor: default; }
+
+  .toast { position: fixed; bottom: 30px; right: 30px; padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 9999; transform: translateY(100px); opacity: 0; transition: all 0.4s cubic-bezier(0.4,0,0.2,1); border: 1px solid; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: rgba(78,168,122,0.15); border-color: rgba(78,168,122,0.3); color: var(--success); }
+  .toast.error { background: rgba(212,74,74,0.15); border-color: rgba(212,74,74,0.3); color: var(--danger); }
+  .toast.info { background: rgba(232,168,56,0.15); border-color: rgba(232,168,56,0.3); color: var(--accent); }
+
+  .stats-bar { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 10px 24px; display: flex; align-items: center; gap: 20px; position: sticky; top: 0; z-index: 30; backdrop-filter: blur(12px); }
+  .stat-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--fg2); }
+  .stat-val { font-weight: 700; color: var(--fg); }
+
+  .char-detail-panel { position: fixed; top:0; right:-450px; width:440px; height:100vh; background: var(--bg2); border-left: 1px solid var(--border); z-index: 100; padding: 32px; transition: right 0.4s cubic-bezier(0.4,0,0.2,1); overflow-y: auto; }
+  .char-detail-panel.open { right: 0; }
+  .char-detail-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index: 99; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .char-detail-overlay.open { opacity: 1; pointer-events: all; }
+
+  .ai-chat-area { display: flex; flex-direction: column; gap: 16px; max-height: 450px; overflow-y: auto; padding: 12px; margin-bottom: 16px; background: rgba(0,0,0,0.2); border-radius: 12px; }
+  .ai-msg { max-width: 85%; padding: 12px 16px; border-radius: 14px; line-height: 1.6; font-size: 14px; word-wrap: break-word; }
+  .ai-msg-user { align-self: flex-end; background: rgba(232,168,56,0.1); border: 1px solid rgba(232,168,56,0.2); }
+  .ai-msg-assistant { align-self: flex-start; background: var(--ai-bg); border: 1px solid var(--ai-border); }
+  .ai-msg-assistant strong { color: var(--ai); }
+  .ai-input-area { display: flex; gap: 10px; }
+  .ai-input { flex: 1; background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; color: var(--fg); outline: none; font-size: 14px; }
+  .ai-send { width: 40px; height: 40px; border-radius: 10px; background: var(--ai); color: var(--bg); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+  .ai-inline { margin-top: 12px; padding: 16px; border-radius: 10px; background: var(--ai-bg); border: 1px solid var(--ai-border); font-size: 13px; color: var(--fg2); line-height: 1.6; }
+  .ai-inline h4 { color: var(--ai); font-size: 14px; margin-bottom: 8px; }
+  .ai-ask-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; background: var(--ai-bg); border: 1px solid var(--ai-border); color: var(--ai); font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+
+  .fade-in { animation: fadeIn 0.4s ease-out; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .rank-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .ai-topic-card { background: var(--card2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.25s; text-align: center; }
+  .ai-topic-card:hover { border-color: var(--ai); background: var(--ai-bg); transform: translateY(-3px); }
+  .setting-input { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--card2); color: var(--fg); font-size: 14px; outline: none; }
+
+  /* Flashcards */
+  .flashcard-container { perspective: 1000px; width: 100%; max-width: 400px; height: 260px; margin: 0 auto; cursor: pointer; }
+  .flashcard { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; }
+  .flashcard.flipped { transform: rotateY(180deg); }
+  .flashcard-front, .flashcard-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 20px; border: 2px solid var(--border); background: var(--card); padding: 30px; }
+  .flashcard-back { transform: rotateY(180deg); border-color: var(--accent); background: var(--card2); }
+
+  /* Memory Match */
+  .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .memory-card { height: 100px; background: var(--card2); border: 1px solid var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 13px; font-weight: 600; cursor: pointer; padding: 10px; transition: all 0.3s; }
+  .memory-card.flipped { border-color: var(--game); background: var(--game-bg); color: var(--game); }
+  .memory-card.matched { border-color: var(--success); background: rgba(78,168,122,0.1); color: var(--success); opacity: 0.5; cursor: default; }
+  .memory-card.wrong { border-color: var(--danger); background: rgba(212,74,74,0.1); }
+
+  /* Speed Round */
+  .timer-ring { width: 60px; height: 60px; border-radius: 50%; border: 4px solid var(--border); border-top-color: var(--accent); animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="bg-glow"></div><div class="bg-glow2"></div>
+<div id="app"></div><div id="toast-container"></div>
+<div class="char-detail-overlay" id="charOverlay" onclick="closeCharPanel()"></div>
+<div class="char-detail-panel" id="charPanel"></div>
+
+<script>
+// ========== RANKS ==========
+const RANKS = [
+  { name: 'Novice', icon: 'fa-seedling', minXP: 0, color: '#7a7468', bg: 'rgba(122,116,104,0.12)' },
+  { name: 'Beginner', icon: 'fa-leaf', minXP: 100, color: '#4ea87a', bg: 'rgba(78,168,122,0.12)' },
+  { name: 'Learner', icon: 'fa-book-open', minXP: 300, color: '#4ea8d6', bg: 'rgba(78,168,214,0.12)' },
+  { name: 'Scholar', icon: 'fa-graduation-cap', minXP: 700, color: '#e8a838', bg: 'rgba(232,168,56,0.12)' },
+  { name: 'Linguist', icon: 'fa-language', minXP: 1200, color: '#d4763a', bg: 'rgba(212,118,58,0.12)' },
+  { name: 'Expert', icon: 'fa-star', minXP: 2000, color: '#ffd700', bg: 'rgba(255,215,0,0.12)' },
+  { name: 'Master', icon: 'fa-crown', minXP: 3500, color: '#ffd700', bg: 'rgba(255,215,0,0.18)' },
+  { name: 'Sage', icon: 'fa-gem', minXP: 5500, color: '#b9f2ff', bg: 'rgba(185,242,255,0.12)' },
+  { name: 'Polyglot', icon: 'fa-fire', minXP: 8500, color: '#e040fb', bg: 'rgba(224,64,251,0.12)' }
+];
+function getRank(xp) { let rank = RANKS[0]; for (const r of RANKS) { if (xp >= r.minXP) rank = r; } return rank; }
+
+// ========== STATE & PERSISTENCE ==========
+const state = {
+  view: 'select', lang: null, module: 'tutorial', tutorialStep: 0,
+  quizIndex: 0, quizScore: 0, quizAnswered: false, _quizQuestions: null,
+  mobileMenuOpen: false, aiChat: [], aiLoading: false, aiConvTopic: null,
+  aiConvMessages: [], aiInline: {}, aiInlineLoading: {}, providers: [],
+  defaultProvider: null,
+  flashcardIndex: 0, flashcardFlipped: false,
+  memoryCards: [], memoryFlipped: [], memoryMatches: 0, memoryLocked: false,
+  speedRoundActive: false, speedRoundTime: 0, speedRoundScore: 0, speedRoundQ: null
+};
+const save = JSON.parse(localStorage.getItem('polyglot_save')) || { xp: 0, streak: 0, lastDay: null, aiUrl: window.location.origin.replace('8501', '8000'), aiModel: 'llama3.2', aiProvider: 'ollama', studentId: 'user_' + Math.floor(Math.random()*10000) };
+function saveState() { localStorage.setItem('polyglot_save', JSON.stringify(save)); }
+function addXP(amount) { save.xp += amount; saveState(); showToast(`+${amount} XP gained!`, 'success'); render(); }
+function checkStreak() {
+  const today = new Date().toDateString(); if (save.lastDay === today) return;
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  save.streak = save.lastDay === yesterday ? save.streak + 1 : 1; save.lastDay = today; saveState();
+}
+
+// ========== AI ENGINE ==========
+const ai = {
+  apiBase: window.location.origin.replace('8501', '8000'),
+  connected: false,
+  async testConnection() {
+    try {
+      const r = await fetch(`${this.apiBase}/api/lesson/providers`);
+      if (r.ok) {
+        const d = await r.json(); state.providers = d.providers; state.defaultProvider = d.defaultProvider;
+        this.connected = true; return true;
+      }
+    } catch (e) {}
+    this.connected = false; return false;
+  },
+  buildSystemPrompt(lang) {
+    return `You are an expert ${lang.name} teacher. Help the user learn. Be concise, accurate and practical. Use markdown formatting. Provide example sentences with translations.`;
+  },
+  async chat(messages, lang) {
+    try {
+      const fullMessages = [{role: 'system', content: this.buildSystemPrompt(lang)}, ...messages];
+      const body = { messages: fullMessages, provider: save.aiProvider, model: save.aiModel };
+      const r = await fetch(`${this.apiBase}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (r.ok) { const d = await r.json(); return d.message.content; }
+    } catch (e) { showToast('AI connection failed', 'error'); }
+    return null;
+  }
+};
+
+// ========== UTILS ==========
+function mdToHtml(t) {
+  if (!t) return '';
+  return t
+    .replace(/### (.*)/g, '<h4>$1</h4>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+// ========== SPEECH ENGINE ==========
+let mediaRecorder; let audioChunks = [];
+async function startRecording() {
+  if (!navigator.mediaDevices) { showToast('Microphone not supported', 'error'); return; }
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorder = new MediaRecorder(stream); audioChunks = []; mediaRecorder.ondataavailable = e => audioChunks.push(e.data); mediaRecorder.start();
+}
+async function stopRecording(expectedText) {
+  return new Promise(resolve => {
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' }); const formData = new FormData();
+      formData.append('file', audioBlob, 'speech.wav'); formData.append('student_id', save.studentId);
+      if (expectedText) formData.append('expected_text', expectedText);
+      try {
+        const r = await fetch(`${ai.apiBase}/api/speech/analyze`, { method: 'POST', body: formData });
+        if (r.ok) { const d = await r.json(); resolve(d); }
+      } catch (e) { showToast('Speech analysis failed', 'error'); }
+      resolve(null);
+    };
+    mediaRecorder.stop();
+  });
+}
+
+// ========== LANGUAGE DATA ==========
+const LANGUAGES = {
+  japanese: {
+    name: 'Japanese', native: '日本語', flag: '🇯🇵', code: 'ja-JP', family: 'Japonic', script: 'Kana + Kanji', color: '#e84848',
+    description: 'A fascinating language with three writing systems and deep cultural nuance.',
+    tutorial: [
+      { title: 'Welcome to Japanese', body: 'Japanese (日本語) is spoken by 125 million people. It uses three writing systems: Hiragana for native words, Katakana for foreign words, and Kanji (Chinese characters) for conceptual meaning. The language follows SOV (Subject-Object-Verb) word order.' },
+      { title: 'Pronunciation Basics', body: 'Japanese has 5 vowel sounds: a (あ), i (い), u (う), e (え), o (お). Consonants are relatively simple — there are no complex clusters. Each syllable is pronounced with equal length and stress, unlike English which has stressed and unstressed syllables.' },
+      { title: 'Essential Particles', body: 'Particles are the glue of Japanese grammar. は (wa) marks the topic, が (ga) marks the subject, を (wo) marks the object, に (ni) indicates direction/time, で (de) indicates location of action. Mastering particles is key to fluency.' },
+      { title: 'Politeness Levels', body: 'Japanese has multiple politeness levels. です/ます (desu/masu) form is polite and safe for most situations. Casual form drops these. There are also humble (kenjougo) and respectful (sonkeigo) forms used in business and formal contexts.' },
+      { title: 'Writing Systems', body: 'Start with Hiragana — 46 basic characters. Then learn Katakana for loanwords. Kanji (2,136 common use characters) can be learned gradually. Every Kanji has onyomi (Chinese reading) and kunyomi (Japanese reading).' }
+    ],
+    vocabulary: [
+      { word: 'こんにちは', reading: 'Konnichiwa', meaning: 'Hello', type: 'Greeting', usage: 'Used during daytime (morning to evening). Not used with close family at home.', example: 'こんにちは、元気ですか？', exampleMeaning: 'Hello, how are you?' },
+      { word: 'ありがとう', reading: 'Arigatou', meaning: 'Thank you', type: 'Expression', usage: 'Casual thanks. Add ございます (gozaimasu) for formal situations.', example: 'プレゼントをありがとう。', exampleMeaning: 'Thank you for the present.' },
+      { word: '食べる', reading: 'Taberu', meaning: 'To eat', type: 'Verb (ichidan)', usage: 'An ichidan (ru) verb. Conjugates: 食べない (don\'t eat), 食べた (ate), 食べよう (let\'s eat).', example: '毎日野菜を食べます。', exampleMeaning: 'I eat vegetables every day.' },
+      { word: '水', reading: 'Mizu', meaning: 'Water', type: 'Noun', usage: 'Basic noun. Can combine: 水泳 (suiei = swimming), 水曜日 (suiyoubi = Wednesday).', example: '水を飲みます。', exampleMeaning: 'I drink water.' },
+      { word: '大きい', reading: 'Ookii', meaning: 'Big', type: 'Adjective (i)', usage: 'An i-adjective. Conjugates: 大きくない (not big), 大きかった (was big), 大きくなる (to become big).', example: 'この部屋は大きいです。', exampleMeaning: 'This room is big.' },
+      { word: '行く', reading: 'Iku', meaning: 'To go', type: 'Verb (godan)', usage: 'A godan (u) verb. Irregular te-form: 行って (itte). Common pattern: 〜へ行く (go to ~).', example: '学校に行きます。', exampleMeaning: 'I go to school.' },
+      { word: '美しい', reading: 'Utsukushii', meaning: 'Beautiful', type: 'Adjective (i)', usage: 'Used for visual beauty, scenery, art. For people\'s character, use 素晴らしい (subarashii).', example: '桜は美しい花です。', exampleMeaning: 'Cherry blossoms are beautiful flowers.' },
+      { word: '友達', reading: 'Tomodachi', meaning: 'Friend', type: 'Noun', usage: 'Casual term. In formal speech, use 友人. Note: 達 is a plural suffix but tomodachi can mean singular or plural.', example: '友達と遊びます。', exampleMeaning: 'I play with friends.' },
+      { word: '先生', reading: 'Sensei', meaning: 'Teacher / Doctor', type: 'Noun', usage: 'Honorific title used for teachers, doctors, lawyers, politicians. Never use for yourself.', example: '先生、質問があります。', exampleMeaning: 'Teacher, I have a question.' },
+      { word: '勉強する', reading: 'Benkyou suru', meaning: 'To study', type: 'Verb (suru)', usage: 'A suru (noun+する) verb. 勉強 alone means "study" as a noun. Conjugate する part: 勉強した (studied).', example: '日本語を勉強しています。', exampleMeaning: 'I am studying Japanese.' }
+    ],
+    grammar: [
+      { rule: 'SOV Word Order', explanation: 'Japanese always places the verb at the end: Subject + Object + Verb. The subject is often omitted when understood from context.', example: '私は リンゴを 食べます。', breakdown: [{part:'私は', role:'Topic (I)', color:'#e84848'},{part:'リンゴを', role:'Object (apple)', color:'#4ea87a'},{part:'食べます', role:'Verb (eat)', color:'#e8a838'}] },
+      { rule: 'Particle は (wa) — Topic Marker', explanation: 'Marks the topic of the sentence. What comes before は is what you\'re talking about. Not necessarily the grammatical subject.', example: '私は 学生です。', breakdown: [{part:'私は', role:'Topic (As for me)', color:'#e84848'},{part:'学生です', role:'Predicate (am a student)', color:'#e8a838'}] },
+      { rule: 'Particle を (wo) — Object Marker', explanation: 'Marks the direct object of a verb — the thing being acted upon.', example: 'コーヒーを 飲みます。', breakdown: [{part:'コーヒーを', role:'Object (coffee)', color:'#4ea87a'},{part:'飲みます', role:'Verb (drink)', color:'#e8a838'}] },
+      { rule: 'Particle に (ni) — Direction / Time', explanation: 'Indicates direction of movement, time of action, or purpose.', example: '学校に 行きます。', breakdown: [{part:'学校に', role:'Direction (to school)', color:'#4ea87a'},{part:'行きます', role:'Verb (go)', color:'#e8a838'}] },
+      { rule: 'Adjective Modification', explanation: 'i-adjectives go directly before nouns. Na-adjectives need な before nouns.', example: '高い 山', breakdown: [{part:'高い', role:'i-adj (tall)', color:'#e84848'},{part:'山', role:'Noun (mountain)', color:'#4ea87a'}] },
+      { rule: 'Te-form for Connecting', explanation: 'The te-form links multiple verbs or requests. For godan verbs, change ending. For ichidan, drop る and add て.', example: '起きて、顔を 洗って、朝ごはんを 食べる。', breakdown: [{part:'起きて', role:'Wake up (te-form)', color:'#e84848'},{part:'顔を洗って', role:'Wash face (te-form)', color:'#4ea87a'},{part:'朝ごはんを食べる', role:'Eat breakfast', color:'#e8a838'}] }
+    ],
+    phrases: [
+      { phrase: '私は学生です', reading: 'Watashi wa gakusei desu', meaning: 'I am a student', parts: [{w:'私',r:'Watashi',m:'I',c:'#e84848'},{w:'は',r:'wa',m:'topic marker',c:'#7a7468'},{w:'学生',r:'gakusei',m:'student',c:'#4ea87a'},{w:'です',r:'desu',m:'am/is',c:'#e8a838'}], pattern: '[Topic] は [Noun] です' },
+      { phrase: '駅まで歩いて行きます', reading: 'Eki made aruite ikimasu', meaning: 'I will walk to the station', parts: [{w:'駅',r:'Eki',m:'station',c:'#4ea87a'},{w:'まで',r:'made',m:'until/to',c:'#7a7468'},{w:'歩いて',r:'aruite',m:'walking (te-form)',c:'#e84848'},{w:'行きます',r:'ikimasu',m:'will go',c:'#e8a838'}], pattern: '[Destination] まで [Method-te] 行きます' },
+      { phrase: 'この本は面白そうです', reading: 'Kono hon wa omoshirosou desu', meaning: 'This book looks interesting', parts: [{w:'この',r:'Kono',m:'this',c:'#e84848'},{w:'本',r:'hon',m:'book',c:'#4ea87a'},{w:'は',r:'wa',m:'topic',c:'#7a7468'},{w:'面白そう',r:'omoshirosou',m:'seems interesting',c:'#e8a838'},{w:'です',r:'desu',m:'copula',c:'#7a7468'}], pattern: '[Noun] は [Adjective-base] そうです' },
+      { phrase: '毎日六時に起きます', reading: 'Mainichi rokujini okimasu', meaning: 'I wake up at 6 every day', parts: [{w:'毎日',r:'Mainichi',m:'every day',c:'#e84848'},{w:'六時に',r:'rokujini',m:'at 6 o\'clock',c:'#4ea87a'},{w:'起きます',r:'okimasu',m:'wake up',c:'#e8a838'}], pattern: '[Frequency] [Time]に [Verb]' }
+    ],
+    writing: {
+      system: 'Japanese uses three writing systems. Hiragana (ひらがな) is the foundation — 46 characters for grammatical particles and native words. Katakana (カタカナ) mirrors Hiragana sounds for foreign loanwords. Kanji (漢字) are logographic characters borrowed from Chinese, each representing meaning.',
+      chars: [
+        {char:'あ',reading:'a',meaning:'—',strokes:'3',note:'First character to learn. Curved strokes.'},
+        {char:'い',reading:'i',meaning:'—',strokes:'2',note:'Two simple strokes, upper and lower.'},
+        {char:'う',reading:'u',meaning:'—',strokes:'3',note:'Contains a small curve on top.'},
+        {char:'え',reading:'e',meaning:'—',strokes:'2',note:'Looks like a bent "e" shape.'},
+        {char:'お',reading:'o',meaning:'—',strokes:'3',note:'Similar to あ but with a horizontal line.'},
+        {char:'か',reading:'ka',meaning:'—',strokes:'3',note:'Like か with an extra stroke.'},
+        {char:'き',reading:'ki',meaning:'—',strokes:'4',note:'Note the small stroke change in handwriting.'},
+        {char:'く',reading:'ku',meaning:'—',strokes:'2',note:'Simple angle shape.'},
+        {char:'け',reading:'ke',meaning:'—',strokes:'3',note:'Three strokes fanning out.'},
+        {char:'こ',reading:'ko',meaning:'—',strokes:'2',note:'Two horizontal-ish strokes.'},
+        {char:'日',reading:'hi/nichi',meaning:'Day / Sun',strokes:'4',note:'Kanji — box with inner line. Onyomi: ニチ, Kunyomi: ひ'},
+        {char:'月',reading:'tsuki/getsu',meaning:'Moon / Month',strokes:'4',note:'Kanji — two inner strokes. Onyomi: ゲツ, Kunyomi: つき'},
+        {char:'水',reading:'mizu/sui',meaning:'Water',strokes:'4',note:'Kanji — center stroke with sides. Radical for water-related words.'},
+        {char:'木',reading:'ki/moku',meaning:'Tree / Wood',strokes:'4',note:'Kanji — horizontal, vertical, two diagonal strokes. Tree radical.'},
+        {char:'人',reading:'hito/jin',meaning:'Person',strokes:'2',note:'Kanji — two simple strokes. Person radical, very common.'},
+        {char:'大',reading:'oo/dai',meaning:'Big / Large',strokes:'3',note:'Kanji — person with arms spread. Common in compounds.'}
+      ]
+    },
+    conversations: [
+      { title: 'Meeting Someone New', lines: [
+        {speaker:'A', text:'初めまして。田中です。', reading:'Hajimemashite. Tanaka desu.', meaning:'Nice to meet you. I\'m Tanaka.', side:'left'},
+        {speaker:'B', text:'初めまして。私はマイクです。', reading:'Hajimemashite. Watashi wa Maiku desu.', meaning:'Nice to meet you. I\'m Mike.', side:'right'},
+        {speaker:'A', text:'アメリカから来ましたか？', reading:'Amerika kara kimashita ka?', meaning:'Did you come from America?', side:'left'},
+        {speaker:'B', text:'はい、そうです。日本は初めてです。', reading:'Hai, sou desu. Nihon wa hajimete desu.', meaning:'Yes, that\'s right. It\'s my first time in Japan.', side:'right'},
+        {speaker:'A', text:'日本語が上手ですね！', reading:'Nihongo ga jouzu desu ne!', meaning:'Your Japanese is good!', side:'left'},
+        {speaker:'B', text:'まだまだです。勉強中です。', reading:'Mada mada desu. Benkyouchuu desu.', meaning:'Not yet. I\'m still studying.', side:'right'}
+      ]}
+    ]
+  },
+  spanish: {
+    name: 'Spanish', native: 'Español', flag: '🇪🇸', code: 'es-ES',
+    family: 'Romance', script: 'Latin',
+    color: '#e84848',
+    description: 'The world\'s second-most spoken native language, rich in expression and culture.',
+    tutorial: [
+      { title: 'Welcome to Spanish', body: 'Spanish (Español) is spoken by 500+ million people across 20 countries. It\'s a Romance language derived from Latin, sharing roots with French, Portuguese, and Italian. Spanish uses the Latin alphabet with the addition of ñ.' },
+      { title: 'Pronunciation', body: 'Spanish is largely phonetic — you read it exactly as it\'s written. Key sounds: rr (rolled r), ñ (ny sound like "canyon"), j (like German "ch" in "Bach"), ll (varies: "y" or "ly"). Vowels are always crisp: a, e, i, o, u — never reduced to schwa.' },
+      { title: 'Gender System', body: 'All Spanish nouns have gender: masculine (el) or feminine (la). Generally, nouns ending in -o are masculine, -a are feminine. Adjectives must match the noun in gender and number: el libro rojo (the red book), la mesa roja (the red table).' },
+      { title: 'Verb Conjugation', body: 'Verbs change form based on who is doing the action. Three infinitive endings: -ar (hablar), -er (comer), -ir (vivir). Each has distinct conjugation patterns. Example: hablo (I speak), hablas (you speak), habla (he/she speaks), hablamos (we speak).' },
+      { title: 'Ser vs Estar', body: 'Both mean "to be" but are used differently. Ser is for permanent/identity: Yo soy estudante (I am a student). Estar is for temporary/state/location: Estoy cansado (I am tired), Estoy en casa (I am at home).' }
+    ],
+    vocabulary: [
+      { word: 'Hola', reading: 'OH-lah', meaning: 'Hello', type: 'Greeting', usage: 'Universal greeting, informal to semi-formal. For very formal, use "Buenos días/tardes/noches".', example: '¡Hola! ¿Cómo estás?', exampleMeaning: 'Hello! How are you?' },
+      { word: 'Gracias', reading: 'GRAH-see-ahs', meaning: 'Thank you', type: 'Expression', usage: 'Standard thanks. "Muchas gracias" for "thank you very much". "De nada" is the response.', example: 'Muchas gracias por tu ajuda.', exampleMeaning: 'Thank you very much for your help.' },
+      { word: 'Comer', reading: 'koh-MEHR', meaning: 'To eat', type: 'Verb (-er)', usage: 'Regular -er verb. Como (I eat), comes (you eat), come (he eats), comemos (we eat), comen (they eat).', example: 'Nosotros comemos paella los domingos.', exampleMeaning: 'We eat paella on Sundays.' },
+      { word: 'Agua', reading: 'AH-gwah', meaning: 'Water', type: 'Noun (fem.)', usage: 'Feminine noun but uses "el" in singular (el agua) because it starts with stressed "a". Plural: las aguas.', example: '¿Puedo tener un vaso de agua?', exampleMeaning: 'Can I have a glass of water?' },
+      { word: 'Grande', reading: 'GRAHN-deh', meaning: 'Big', type: 'Adjective', usage: 'Changes ending for gender: grande/grande (same for m/f before noun), gran before noun (un gran hombre = a great man).', example: 'Esta es una casa muy grande.', exampleMeaning: 'This is a very big house.' },
+      { word: 'Ir', reading: 'eer', meaning: 'To go', type: 'Verb (irregular)', usage: 'Highly irregular: voy, vas, va, vamos, van. Common pattern: ir + a + infinitive = going to do something.', example: 'Voy a ir al mercado mañana.', exampleMeaning: 'I\'m going to go to the market tomorrow.' },
+      { word: 'Hermoso', reading: 'ehr-MOH-soh', meaning: 'Beautiful', type: 'Adjective', usage: 'Gendered: hermoso (masc.), hermosa (fem.). Stronger than "bonito". Used for people, places, things.', example: '¡Qué vista tan hermosa!', exampleMeaning: 'What a beautiful view!' },
+      { word: 'Amigo', reading: 'ah-MEE-goh', meaning: 'Friend', type: 'Noun (masc.)', usage: 'Masculine: el amigo. Feminine: la amiga. Plural: los amigos / las amigas.', example: 'Mi mejor amigo vive en Madrid.', exampleMeaning: 'My best friend lives in Madrid.' },
+      { word: 'Libro', reading: 'LEE-broh', meaning: 'Book', type: 'Noun (masc.)', usage: 'Masculine noun. Related: librería (bookstore), biblioteca (library).', example: 'Estoy leyendo un libro interesante.', exampleMeaning: 'I\'m reading an interesting book.' },
+      { word: 'Estudiar', reading: 'ehs-too-DYAHR', meaning: 'To study', type: 'Verb (-ar)', usage: 'Regular -ar verb. Estudio (I study), estudias (you study), estudia (he studies), estudiamos (we study).', example: 'Quiero estudiar medicina.', exampleMeaning: 'I want to study medicine.' }
+    ],
+    grammar: [
+      { rule: 'SVO Word Order', explanation: 'Spanish follows Subject-Verb-Object order, like English. But the subject can be omitted because the verb ending tells you who is acting.', example: '(Yo) como una manzana.', breakdown: [{part:'(Yo)', role:'Subject (I) — optional', color:'#e84848'},{part:'como', role:'Verb (eat)', color:'#e8a838'},{part:'una manzana', role:'Object (an apple)', color:'#4ea87a'}] },
+      { rule: 'Definite Articles: el, la, los, las', explanation: 'Spanish has four definite articles matching gender and number: el (masc. sing.), la (fem. sing.), los (masc. pl.), las (fem. pl.).', example: 'el libro, la mesa, los livros, las mesas', breakdown: [{part:'el/la', role:'Singular article', color:'#e84848'},{part:'los/las', role:'Plural article', color:'#4ea87a'}] },
+      { rule: 'Ser vs Estar (Two "To Be")', explanation: 'Ser = identity, origin, time, permanent traits. Estar = location, state, feelings, temporary conditions.', example: 'Ella es profesora. / Ella está feliz.', breakdown: [{part:'Ella es profesora', role:'Ser — permanent identity', color:'#e84848'},{part:'Ella está feliz', role:'Estar — current state', color:'#4ea87a'}] },
+      { rule: 'Adjective-Noun Agreement', explanation: 'Adjectives must match the noun in gender (masculine/feminine) and number (singular/plural). Usually add -a for feminine, -s for plural.', example: 'el coche rojo → los coches rojos', breakdown: [{part:'el coche rojo', role:'Masc. singular', color:'#e84848'},{part:'los coches rojos', role:'Masc. plural', color:'#4ea87a'}] },
+      { rule: 'Ir + a + Infinitive', explanation: 'To express future plans or intention: conjugate "ir" + "a" + infinitive verb. This is the informal future.', example: 'Voy a estudiar español.', breakdown: [{part:'Voy', role:'Ir conjugated (I go)', color:'#e84848'},{part:'a', role:'Preposition', color:'#7a7468'},{part:'estudiar', role:'Infinitive (to study)', color:'#e8a838'}] }
+    ],
+    phrases: [
+      { phrase: 'Me gustaría una mesa para dos', reading: 'Meh goos-tah-REE-ah OO-nah MEH-sah PAH-rah dohs', meaning: 'I would like a table for two', parts: [{w:'Me gustaría',r:'Me goos-tah-REE-ah',m:'I would like',c:'#e84848'},{w:'una mesa',r:'OO-nah MEH-sah',m:'a table',c:'#4ea87a'},{w:'para dos',r:'PAH-rah dohs',m:'for two',c:'#e8a838'}], pattern: 'Me gustaría [noun] para [number]' },
+      { phrase: '¿Dónde está la estación de tren?', reading: 'DOHN-deh ehs-TAH lah ehs-tah-SYOHN deh trehn', meaning: 'Where is the train station?', parts: [{w:'¿Dónde está',r:'DOHN-deh ehs-TAH',m:'Where is',c:'#e84848'},{w:'la estación',r:'lah ehs-tah-SYOHN',m:'the station',c:'#4ea87a'},{w:'de tren',r:'deh trehn',m:'of train',c:'#e8a838'}], pattern: '¿Dónde está [article] [noun] de [type]?' },
+      { phrase: 'Tengo que aprender español', reading: 'TEHN-goh keh ahp-REHN-dehr ehs-pah-NYOL', meaning: 'I need to learn Spanish', parts: [{w:'Tengo que',r:'TEHN-goh keh',m:'I have to / I need to',c:'#e84848'},{w:'aprender',r:'ahp-REHN-dehr',m:'to learn',c:'#e8a838'},{w:'español',r:'ehs-pah-NYOL',m:'Spanish',c:'#4ea87a'}], pattern: 'Tengo que [infinitive] [noun]' }
+    ],
+    writing: {
+      system: 'Spanish uses the Latin alphabet with one additional letter: ñ (eñe). Accents (tildes) mark stressed syllables: á, é, í, ó, ú. The diaeresis (ü) appears in güe/güi to indicate the u is pronounced. Punctuation is distinctive: inverted question marks (¿) and exclamation marks (¡) open questions and exclamations.',
+      chars: [
+        {char:'ñ',reading:'nyeh',meaning:'eñe',strokes:'—',note:'Pronounced like "ny" in canyon: España (ehs-PAH-nyah)'},
+        {char:'á',reading:'AH (stressed)',meaning:'a with accent',strokes:'—',note:'Marks stress: papá (dad) vs papa (potato/pope)'},
+        {char:'é',reading:'EH (stressed)',meaning:'e with accent',strokes:'—',note:'Marks stress: café (coffee)'},
+        {char:'í',reading:'EE (stressed)',meaning:'i with accent',strokes:'—',note:'Marks stress: sí (yes)'},
+        {char:'ó',reading:'OH (stressed)',meaning:'o with accent',strokes:'—',note:'Marks stress: también (also)'},
+        {char:'ú',reading:'OO (stressed)',meaning:'u with accent',strokes:'—',note:'Marks stress: tú (you) vs tu (your)'},
+        {char:'ü',reading:'oo',meaning:'u with diaeresis',strokes:'—',note:'Forces u pronunciation: lingüística (linguistics)'},
+        {char:'¿',reading:'—',meaning:'Inverted question mark',strokes:'—',note:'Opens every question: ¿Cómo estás?'},
+        {char:'¡',reading:'—',meaning:'Inverted exclamation',strokes:'—',note:'Opens every exclamation: ¡Hola!'}
+      ]
+    },
+    conversations: [
+      { title: 'Ordering at a Restaurant', lines: [
+        {speaker:'Camarero', text:'Buenas noches. ¿Mesa para cuántos?', reading:'BWEH-nahs NOH-chehs. MEH-sah PAH-rah KWAHN-tohs?', meaning:'Good evening. Table for how many?', side:'left'},
+        {speaker:'Tú', text:'Para dos, por favor.', reading:'PAH-rah dohs, por fah-BOHR.', meaning:'For two, please.', side:'right'},
+        {speaker:'Camarero', text:'Aquí tienen la carta. ¿Les traigo algo de beber?', reading:'ah-KEE tee-EH-nehn lah KAHR-tah. lehs TRAH-ee-goh AHL-goh deh beh-BEHR?', meaning:'Here\'s the menu. Shall I bring you something to drink?', side:'left'},
+        {speaker:'Tú', text:'Sí, dos copas de vino tinto, por favor.', reading:'see, dohs KOH-pahs deh BEE-noh TEEN-toh, por fah-BOHR.', meaning:'Yes, two glasses of red wine, please.', side:'right'}
+      ]}
+    ]
+  },
+  french: {
+    name: 'French', native: 'Français', flag: '🇫🇷', code: 'fr-FR',
+    family: 'Romance', script: 'Latin',
+    color: '#3b82d6',
+    description: 'The language of diplomacy, art, and romance — elegant and precise.',
+    tutorial: [
+      { title: 'Welcome to French', body: 'French (Français) is spoken by 300+ million people. A Romance language like Spanish and Italian, it evolved from Vulgar Latin. French is known for its nasal vowels, silent letters, and elegant liaison between words.' },
+      { title: 'Pronunciation', body: 'Key features: nasal vowels (on, an, in, un), silent final consonants (except c, r, f, l — "CaReFuL"), the French r (uvular fricative, like a soft gargling), and liaisons where silent final consonants connect to the next vowel.' },
+      { title: 'Gender & Articles', body: 'Every noun is masculine or feminine: le livre (the book, m.), la table (the table, f.). There\'s no rule that always works — you must memorize gender with each noun. Articles also have plural forms: les.' },
+      { title: 'Verb Conjugation', body: 'French verbs conjugate for person and tense. Four main patterns: -er (parler), -ir (finir), -re (vendre), and irregular (être, avoir, aller, faire). The present tense has 6 forms.' },
+      { title: 'Formal vs Informal', body: 'Use "tu" with friends, family, children. Use "vous" for strangers, elders, professionals, and also as plural "you". Switching from vous to tu is a social milestone in French relationships.' }
+    ],
+    vocabulary: [
+      { word: 'Bonjour', reading: 'bohn-ZHOOR', meaning: 'Hello / Good morning', type: 'Greeting', usage: 'Used during daytime. "Bonsoir" for evening. "Salut" is informal hello/goodbye.', example: 'Bonjour, comment allez-vous ?', exampleMeaning: 'Hello, how are you?' },
+      { word: 'Merci', reading: 'mehr-SEE', meaning: 'Thank you', type: 'Expression', usage: '"Merci beaucoup" for "thank you very much". Response: "De rien" (you\'re welcome) or "Je vous en prie" (formal).', example: 'Merci beaucoup pour votre aide.', exampleMeaning: 'Thank you very much for your help.' },
+      { word: 'Manger', reading: 'mahn-ZHAY', meaning: 'To eat', type: 'Verb (-er)', usage: 'Regular -er verb. Je mange, tu manges, il mange, nous mangeons, vous mangez, ils mangent.', example: 'Nous mangeons au restaurant ce soir.', exampleMeaning: 'We are eating at the restaurant tonight.' },
+      { word: 'Eau', reading: 'OH', meaning: 'Water', type: 'Noun (fem.)', usage: 'Feminine: l\'eau (the water). Plural: les eaux. Compounds: eau de toilette, eau minérale.', example: 'Une bouteille d\'eau, s\'il vous plaît.', exampleMeaning: 'A bottle of water, please.' },
+      { word: 'Grand', reading: 'GRAHN', meaning: 'Big / Tall', type: 'Adjective', usage: 'Masc: grand/grand. Fem: grande. Before vowel: grand\'homme. Can also mean "tall" for people.', example: 'C\'est un grand bâtiment.', exampleMeaning: 'It\'s a big building.' },
+      { word: 'Aller', reading: 'ah-LAY', meaning: 'To go', type: 'Verb (irregular)', usage: 'Irregular: je vais, tu vas, il va, nous allons, vous allez, ils vont. Also used in futur proche: aller + infinitive.', example: 'Je vais à Paris demain.', exampleMeaning: 'I\'m going to Paris tomorrow.' },
+      { word: 'Beau', reading: 'BOH', meaning: 'Beautiful', type: 'Adjective', usage: 'Irregular adjective: beau (masc. before cons.), bel (masc. before vowel), belle (fem.). Plural: beaux, belles.', example: 'Quelle belle journée !', exampleMeaning: 'What a beautiful day!' },
+      { word: 'Ami', reading: 'ah-MEE', meaning: 'Friend', type: 'Noun (masc.)', usage: 'Masculine: l\'ami. Feminine: l\'amie (or une amie). Plural: les amis / les amies.', example: 'C\'est mon meilleur ami.', exampleMeaning: 'He\'s my best friend.' },
+      { word: 'Étudier', reading: 'ay-too-DYAY', meaning: 'To study', type: 'Verb (-er)', usage: 'Regular -er verb. J\'étudie, tu étudies, il étudie, nous étudions, vous étudiez, ils étudient.', example: 'J\'étudie le français depuis dois ans.', exampleMeaning: 'I\'ve been studying French for two years.' },
+      { word: 'Avoir', reading: 'ah-VWAHR', meaning: 'To have', type: 'Verb (irregular)', usage: 'Essential irregular verb: j\'ai, tu as, il a, nous avons, vous avez, ils ont. Used in many expressions: avoir faim (to be hungry), avoir froid (to be cold).', example: 'J\'ai une question.', exampleMeaning: 'I have a question.' }
+    ],
+    grammar: [
+      { rule: 'SVO Word Order', explanation: 'French uses SVO order like English. Adjectives usually follow the noun but some common ones come before: beau, bon, grand, petit, nouveau.', example: 'Je mange une pomme rouge.', breakdown: [{part:'Je', role:'Subject (I)', color:'#e84848'},{part:'mange', role:'Verb (eat)', color:'#e8a838'},{part:'une pomme rouge', role:'Object (a red apple)', color:'#4ea87a'}] },
+      { rule: 'Noun Gender', explanation: 'Every noun is masculine or feminine. No visual cue in most cases — must be memorized. Some patterns: -tion, -té are usually feminine; -ment, -ier are usually masculine.', example: 'la nation (f.) / le gouvernement (m.)', breakdown: [{part:'la nation', role:'Feminine (-tion)', color:'#e84848'},{part:'le gouvernement', role:'Masculine (-ment)', color:'#4ea87a'}] },
+      { rule: 'Negation: ne...pas', explanation: 'French wraps the verb with ne...pas. In spoken French, "ne" is often dropped. With passé composé: n\'ai pas mangé.', example: 'Je ne comprends pas.', breakdown: [{part:'Je ne', role:'Negative opening', color:'#e84848'},{part:'comprends', role:'Verb (understand)', color:'#e8a838'},{part:'pas', role:'Negative closing', color:'#4ea87a'}] },
+      { rule: 'Futur Proche', explanation: 'Near future: aller (conjugated) + infinitive. Simpler than the true future tense and very common in everyday speech.', example: 'Je vais manger.', breakdown: [{part:'Je vais', role:'Aller conjugated', color:'#e84848'},{part:'manger', role:'Infinitive (to eat)', color:'#e8a838'}] },
+      { rule: 'Adjective Placement', explanation: 'Most adjectives follow the noun: une voiture rouge (a red car). BANGS adjectives go before: Beauty, Age, Number, Goodness, Size.', example: 'une petite vieille maison', breakdown: [{part:'petite', role:'Size (before noun)', color:'#e84848'},{part:'vieille', role:'Age (before noun)', color:'#e8a838'},{part:'maison', role:'Noun (house)', color:'#4ea87a'}] }
+    ],
+    phrases: [
+      { phrase: 'Je voudrais un café, s\'il vous plaît', reading: 'Zhuh voo-DREH ahn kah-FAY, seel voo PLEH', meaning: 'I would like a coffee, please', parts: [{w:'Je voudrais',r:'Zhuh voo-DREH',m:'I would like',c:'#e84848'},{w:'un café',r:'ahn kah-FAY',m:'a coffee',c:'#4ea87a'},{w:'s\'il vous plaît',r:'seel voo PLEH',m:'please',c:'#e8a838'}], pattern: 'Je voudrais [article] [noun], s\'il vous plaît' },
+      { phrase: 'Comment dit-on "merci" en anglais ?', reading: 'koh-MAHN dee-tohn "mehr-SEE" ahn ahn-GLEH?', meaning: 'How do you say "thank you" in English?', parts: [{w:'Comment dit-on',r:'koh-MAHN dee-tohn',m:'How does one say',c:'#e84848'},{w:'"merci"',r:'mehr-SEE',m:'thank you',c:'#4ea87a'},{w:'en anglais',r:'ahn ahn-GLEH',m:'in English',c:'#e8a838'}], pattern: 'Comment dit-on "[word]" en [language] ?' }
+    ],
+    writing: {
+      system: 'French uses the Latin alphabet with several diacritics: accent aigu (é), accent grave (è, à, ù), accent circonflexe (ê, î, ô, û), tréma (ë, ï, ü), and cédille (ç). These affect pronunciation and sometimes meaning: ou (or) vs où (where), sur (on) vs sûr (sure).',
+      chars: [
+        {char:'é',reading:'AY',meaning:'e accent aigu',strokes:'—',note:'Closed "e" sound: café, été, résumé'},
+        {char:'è',reading:'EH',meaning:'e accent grave',strokes:'—',note:'Open "e" sound: père, mère, frère'},
+        {char:'ê',reading:'EH (longer)',meaning:'e accent circonflexe',strokes:'—',note:'Often marks a lost "s": forêt (from forest)'},
+        {char:'ç',reading:'S',meaning:'c cédille',strokes:'—',note:'Makes "c" soft before a/o/u: français, garçon'},
+        {char:'à',reading:'AH',meaning:'a accent grave',strokes:'—',note:'Distinguishes: à (to/at) vs a (has)'},
+        {char:'ù',reading:'OO',meaning:'u accent grave',strokes:'—',note:'Only in "où" (where) to distinguish from "ou" (or)'},
+        {char:'œ',reading:'EUH',meaning:'oe ligature',strokes:'—',note:'œuf (egg), cœur (heart), œuvre (work)'},
+        {char:'ë',reading:'EH',meaning:'e tréma',strokes:'—',note:'Forces separate pronunciation: Noël (no-EL)'}
+      ]
+    },
+    conversations: [
+      { title: 'At a Café in Paris', lines: [
+        {speaker:'Serveur', text:'Bonjour, qu\'est-ce que vous désirez ?', reading:'bohn-ZHOOR, kehs kuh voo day-zee-RAY?', meaning:'Hello, what would you like?', side:'left'},
+        {speaker:'Vous', text:'Je voudrais un croissant et un café crème, s\'il vous plaît.', reading:'Zhuh voo-DREH ahn kwah-SAHN eh ahn kah-FAY KREHM, seel voo PLEH.', meaning:'I\'d like a croissant and a cream coffee, please.', side:'right'},
+        {speaker:'Serveur', text:'Tout de suite. C\'est pour ici ou à emporter ?', reading:'Too duh SWEET. Seh poor ee-SEE oo ah ahn-pohr-TAY?', meaning:'Right away. Is that for here or to go?', side:'left'},
+        {speaker:'Vous', text:'Pour ici, merci.', reading:'Pour ee-SEE, mehr-SEE.', meaning:'For here, thank you.', side:'right'}
+      ]}
+    ]
+  },
+  korean: {
+    name: 'Korean', native: '한국어', flag: '🇰🇷', code: 'ko-KR',
+    family: 'Koreanic', script: 'Hangul',
+    color: '#4ea87a',
+    description: 'A scientific writing system and rich honorific culture make Korean uniquely rewarding.',
+    tutorial: [
+      { title: 'Welcome to Korean', body: 'Korean (한국어) is spoken by 77 million people. Hangul, the Korean script, was invented in 1443 by King Sejong the Great — one of the most scientific writing systems ever created. Letters are grouped into syllable blocks.' },
+      { title: 'Hangul Structure', body: 'Each syllable block has 2-4 letters arranged in a square: initial consonant + vowel (+ optional final consonant). Example: 한 = ㅎ(h) + ㅏ(a) + ㄴ(n). There are 14 basic consonants and 10 basic vowels.' },
+      { title: 'Pronunciation', body: 'Korean has no tones. Key sounds: ㄹ (between r and l), ㅂ/ㅍ/ㅃ (b/p/bb), ㄱ/ㅋ/ㄲ (g/k/gg), ㅈ/ㅊ/ㅉ (j/ch/jj), ㅅ/ㅆ (s/ss). Vowels: ㅏ(a), ㅓ(eo), ㅗ(o), ㅜ(u), ㅡ(eu), ㅣ(i).' },
+      { title: 'Honorifics', body: 'Korean has elaborate politeness levels. 해요체 (haeyoche) is polite/informal — safe for most situations. 합쇼체 (hapshoche) is formal. 반말 (banmal) is casual — only with close friends or younger people.' },
+      { title: 'SOV Word Order', body: 'Like Japanese, Korean uses SOV order: Subject + Object + Verb. Particles mark grammatical roles: 은/는 (topic), 이/가 (subject), 을/를 (object), 에 (location/direction).' }
+    ],
+    vocabulary: [
+      { word: '안녕하세요', reading: 'Annyeonghaseyo', meaning: 'Hello', type: 'Greeting', usage: 'Polite greeting. "안녕히 가세요" (goodbye to someone leaving), "안녕히 계세요" (goodbye to someone staying).', example: '안녕하세요, 만나서 반갑습니다.', exampleMeaning: 'Hello, nice to meet you.' },
+      { word: '감사합니다', reading: 'Gamsahamnida', meaning: 'Thank you', type: 'Expression', usage: 'Formal thanks. "고맙습니다" is slightly less formal. "고마워" is casual.', example: '도와주셔서 감사합니다.', exampleMeaning: 'Thank you for helping me.' },
+      { word: '먹다', reading: 'Meokda', meaning: 'To eat', type: 'Verb', usage: 'Informal base: 먹다. Polite: 먹어요. Formal: 먹습니다. Past: 먹었어요 (ate).', example: '밥을 먹었어요.', exampleMeaning: 'I ate (rice/meal).' },
+      { word: '물', reading: 'Mul', meaning: 'Water', type: 'Noun', usage: 'Basic noun. Compounds: 물고기 (fish = water meat), 수물 (not used — instead: 생수 = purified water).', example: '물 좀 주세요.', exampleMeaning: 'Please give me some water.' },
+      { word: '크다', reading: 'Keuda', meaning: 'Big', type: 'Adjective', usage: 'In Korean, adjectives are actually verbs. Polite: 커요. Formal: 큽니다. "작다" is small.', example: '이 집은 너무 커요.', exampleMeaning: 'This house is too big.' },
+      { word: '가다', reading: 'Gada', meaning: 'To go', type: 'Verb', usage: 'Polite: 가요. Formal: 갑니다. Past: 갔어요. Pattern: ~에 가다 (go to ~).', example: '학교에 가요.', exampleMeaning: 'I go to school.' },
+      { word: '아름답다', reading: 'Areumdapda', meaning: 'Beautiful', type: 'Adjective', usage: 'Polite: 아름다워요. Formal: 아름답습니다. The ㅂ irregular: ㅂ becomes 우 before vowel endings.', example: '꽃이 아름다워요.', exampleMeaning: 'The flower is beautiful.' },
+      { word: '친구', reading: 'Chingu', meaning: 'Friend', type: 'Noun', usage: 'Traditionally means someone the same age as you. For older/younger friends, Koreans use 선배/후배 or other terms.', example: '친구랑 같이 갔어요.', exampleMeaning: 'I went together with a friend.' },
+      { word: '공부하다', reading: 'Gongbuhada', meaning: 'To study', type: 'Verb (hada)', usage: 'A hada (하다) verb: noun + 하다. Polite: 공부해요. Formal: 공부합니다.', example: '한국어를 공부하고 있어요.', exampleMeaning: 'I am studying Korean.' }
+    ],
+    grammar: [
+      { rule: 'SOV Word Order', explanation: 'Subject-Object-Verb. The verb always comes last. Topic marker 은/는 or subject marker 이/가 follow the noun.', example: '저는 사과를 먹어요.', breakdown: [{part:'저는', role:'Topic (I)', color:'#e84848'},{part:'사과를', role:'Object (apple)', color:'#4ea87a'},{part:'먹어요', role:'Verb (eat)', color:'#e8a838'}] },
+      { rule: 'Topic Particle 은/는', explanation: 'Marks what the sentence is about. 은 after consonant, 는 after vowel. Often translates to "as for..."', example: '저는 학생이에요.', breakdown: [{part:'저는', role:'As for me', color:'#e84848'},{part:'학생이에요', role:'(I) am a student', color:'#e8a838'}] },
+      { rule: 'Object Particle 을/를', explanation: 'Marks the direct object. 을 after consonant, 를 after vowel.', example: '커피를 마셔요.', breakdown: [{part:'커피를', role:'Object (coffee)', color:'#4ea87a'},{part:'마셔요', role:'Verb (drink)', color:'#e8a838'}] },
+      { rule: 'Hada Verbs (하다)', explanation: 'Many Korean verbs are noun + 하다 (to do). The noun part carries meaning, 하다 makes it a verb. Conjugate only 하다.', example: '운동(을) 하다 → 운동해요', breakdown: [{part:'운동', role:'Noun (exercise)', color:'#4ea87a'},{part:'해요', role:'Conjugated 하다 (do)', color:'#e8a838'}] },
+      { rule: 'Past Tense ~았/었어요', explanation: 'Add 았어요 after ㅏ/ㅗ vowels, 었어요 after others. For 하다 verbs: 했어요.', example: '먹다 → 먹었어요', breakdown: [{part:'먹', role:'Verb stem', color:'#e84848'},{part:'었어요', role:'Past tense ending', color:'#e8a838'}] }
+    ],
+    phrases: [
+      { phrase: '저는 한국어를 배우고 있어요', reading: 'Jeoneun hangugeoreul baeugo isseoyo', meaning: 'I am learning Korean', parts: [{w:'저는',r:'Jeoneun',m:'I (topic)',c:'#e84848'},{w:'한국어를',r:'hangugeoreul',m:'Korean (object)',c:'#4ea87a'},{w:'배우고 있어요',r:'baeugo isseoyo',m:'am learning',c:'#e8a838'}], pattern: '[Topic]은/는 [Object]를 배우고 있어요' },
+      { phrase: '여기까지 taxi로 얼마예요?', reading: 'Yeogikkaji taeksiro eolmayeyo?', meaning: 'How much is it by taxi to here?', parts: [{w:'여기까지',r:'Yeogikkaji',m:'to here',c:'#e84848'},{w:'taxi로',r:'taeksiro',m:'by taxi',c:'#4ea87a'},{w:'얼마예요?',r:'eolmayeyo?',m:'how much?',c:'#e8a838'}], pattern: '[Destination]까지 [method]로 얼마예요?' }
+    ],
+    writing: {
+      system: 'Hangul is a featural alphabet: the shapes of consonants mimic mouth positions. Basic consonants: ㄱ(g), ㄴ(n), ㄷ(d), ㄹ(r/l), ㅁ(m), ㅂ(b), ㅅ(s), ㅇ(silent/ng), ㅈ(j), ㅊ(ch), ㅋ(k), ㅌ(t), ㅍ(p), ㅎ(h). Doubles: ㄲ, ㄸ, ㅃ, ㅆ, ㅉ. Vowels: ㅏ, ㅓ, ㅗ, ㅜ, ㅡ, ㅣ, and combinations like ㅐ, ㅔ, ㅘ, ㅝ.',
+      chars: [
+        {char:'가',reading:'ga',meaning:'—',strokes:'—',note:'ㄱ(g) + ㅏ(a) = 가. First syllable block!'},
+        {char:'나',reading:'na',meaning:'—',strokes:'—',note:'ㄴ(n) + ㅏ(a) = na. Means "I" (casual).'},
+        {char:'다',reading:'da',meaning:'—',strokes:'—',note:'ㄷ(d) + ㅏ(a) = da. Means "all" or verb ending.'},
+        {char:'라',reading:'ra',meaning:'—',strokes:'—',note:'ㄹ(r/l) + ㅏ(a) = ra. The ㄹ sound varies.'},
+        {char:'마',reading:'ma',meaning:'—',strokes:'—',note:'ㅁ(m) + ㅏ(a) = ma. As in 마시다 (to drink).'},
+        {char:'바',reading:'ba',meaning:'—',strokes:'—',note:'ㅂ(b) + ㅏ(a) = ba. As in 밥 (rice/meal, with final ㅂ).'},
+        {char:'사',reading:'sa',meaning:'—',strokes:'—',note:'ㅅ(s) + ㅏ(a) = sa. As in 사람 (person).'},
+        {char:'아',reading:'a',meaning:'—',strokes:'—',note:'ㅇ(silent) + ㅏ(a) = a. Means "ah" or is a grammatical particle.'},
+        {char:'자',reading:'ja',meaning:'—',strokes:'—',note:'ㅈ(j) + ㅏ(a) = ja. As in 자다 (to sleep).'},
+        {char:'한',reading:'han',meaning:'Korean / One',strokes:'—',note:'ㅎ(h) + ㅏ(a) + ㄴ(n). As in 한국 (Korea), 한글 (Hangul).'}
+      ]
+    },
+    conversations: [
+      { title: 'Meeting a New Classmate', lines: [
+        {speaker:'A', text:'안녕하세요! 만나서 반갑습니다.', reading:'Annyeonghaseyo! Mannaseo bangapseumnida.', meaning:'Hello! Nice to meet you.', side:'left'},
+        {speaker:'B', text:'네, 반갑습니다. 저는 미나입니다.', reading:'Ne, bangapseumnida. Jeoneun Mina-imnida.', meaning:'Yes, nice to meet you. I\'m Mina.', side:'right'},
+        {speaker:'A', text:'어디에서 왔어요?', reading:'Eodieseo wasseoyo?', meaning:'Where are you from?', side:'left'},
+        {speaker:'B', text:'일본에서 왔어요. 한국어를 공부하고 싶어요.', reading:'Ilboneseo wasseoyo. Hangugeoreul gongbuhago sipeoyo.', meaning:'I came from Japan. I want to study Korean.', side:'right'},
+        {speaker:'A', text:'한국어를 잘하시네요!', reading:'Hangugeoreul jalhasineyo!', meaning:'Your Korean is good!', side:'left'}
+      ]}
+    ]
+  },
+  english: {
+    name: 'English', native: 'English', flag: '🇬🇧', code: 'en-US',
+    family: 'Germanic', script: 'Latin',
+    color: '#a88858',
+    description: 'The global lingua franca — essential for travel, business, and culture.',
+    tutorial: [
+      { title: 'Welcome to English', body: 'English is spoken by 1.5 billion people worldwide. A Germanic language with heavy Latin/French influence, it has the largest vocabulary of any language — roughly 170,000 words in current use.' },
+      { title: 'Pronunciation Challenges', body: 'English is NOT phonetic — the same letters can sound completely different (though, through, thought, rough). Stress is crucial: RE-cord (noun) vs re-CORD (verb). Master the 44 phonemes of English.' },
+      { title: 'Articles: a, an, the', body: 'English has definite (the) and indefinite (a/an) articles. "The" for specific things, "a/an" for general/first mention. "An" before vowel sounds: an apple, an hour (but a university).' },
+      { title: 'Tense System', body: 'English has 12 tenses combining past/present/future with simple/continuous/perfect/perfect continuous. Focus first on: Present Simple (I eat), Past Simple (I ate), Present Continuous (I am eating), Future (I will eat).' },
+      { title: 'Word Order is Strict', body: 'Unlike many languages, English word order is almost always SVO and cannot be freely rearranged. "The dog bit the man" vs "The man bit the dog" have completely different meanings.' }
+    ],
+    vocabulary: [
+      { word: 'Hello', reading: 'heh-LOH', meaning: 'Hello / Greeting', type: 'Greeting', usage: 'Universal, all contexts. Informal alternatives: hi, hey. Formal: good morning/afternoon/evening.', example: 'Hello, how can I help you?', exampleMeaning: '—' },
+      { word: 'Thank you', reading: 'THANGK yoo', meaning: 'Thank you', type: 'Expression', usage: 'Standard. Stronger: "Thank you very much" or "I really appreciate it." Response: "You\'re welcome."', example: 'Thank you for your time.', exampleMeaning: '—' },
+      { word: 'Eat', reading: 'eet', meaning: 'To consume food', type: 'Verb', usage: 'Irregular: eat, ate, eaten. Also: have a meal, grab a bite (informal).', example: 'We usually eat dinner at 7 PM.', exampleMeaning: '—' },
+      { word: 'Water', reading: 'WAW-ter', meaning: 'H2O, liquid', type: 'Noun', usage: 'Uncountable noun — no plural. "Waters" only in specific contexts (territorial waters).', example: 'Can I have a glass of water?', exampleMeaning: '—' },
+      { word: 'Big', reading: 'big', meaning: 'Large in size', type: 'Adjective', usage: 'Comparative: bigger, Superlative: biggest. Synonyms: large, huge, enormous, massive.', example: 'That\'s a really big house.', exampleMeaning: '—' },
+      { word: 'Go', reading: 'goh', meaning: 'To move/travel', type: 'Verb', usage: 'Irregular: go, went, gone. Phrasal verbs: go on, go out, go up, go through.', example: 'I go to work by bus.', exampleMeaning: '—' },
+      { word: 'Beautiful', reading: 'BYOO-tih-ful', meaning: 'Very pleasing', type: 'Adjective', usage: '3 syllables: beau-ti-ful. Adverb: beautifully. Noun: beauty. For people, places, art, ideas.', example: 'What a beautiful sunset!', exampleMeaning: '—' },
+      { word: 'Friend', reading: 'frend', meaning: 'Companion', type: 'Noun', usage: 'Countable: a friend, many friends. "Be friends with" (relationship). "Make friends" (create friendships).', example: 'She\'s been my friend for years.', exampleMeaning: '—' },
+      { word: 'Study', reading: 'STUH-dee', meaning: 'To learn', type: 'Verb / Noun', usage: 'Verb: I study English. Noun: a study. Adjective form doesn\'t exist — use "academic" or "educational".', example: 'I study English every day.', exampleMeaning: '—' },
+      { word: 'Understand', reading: 'uhn-der-STAND', meaning: 'To comprehend', type: 'Verb', usage: 'Irregular: understand, understood, understood. NOT "understanded". Common mistake for learners.', example: 'I don\'t understand what you mean.', exampleMeaning: '—' }
+    ],
+    grammar: [
+      { rule: 'SVO Word Order', explanation: 'Strict Subject-Verb-Object order. Adverbs of frequency go before the main verb: "I always eat breakfast" (not "I eat always breakfast").', example: 'She reads books every day.', breakdown: [{part:'She', role:'Subject', color:'#e84848'},{part:'reads', role:'Verb', color:'#e8a838'},{part:'books every day', role:'Object + Time', color:'#4ea87a'}] },
+      { rule: 'Present Simple vs Continuous', explanation: 'Simple = habits, facts: "I eat breakfast at 7." Continuous = happening now, temporary: "I am eating breakfast now." Never mix: NOT "I am eating breakfast every day."', example: 'I work here. / I am working now.', breakdown: [{part:'I work here', role:'Simple — permanent fact', color:'#e84848'},{part:'I am working now', role:'Continuous — right now', color:'#4ea87a'}] },
+      { rule: 'Articles: a vs the', explanation: '"A/an" = first mention, general. "The" = specific, already mentioned, unique. No article with uncountable/abstract in general: "Love is beautiful" (not "The love").', example: 'I saw a dog. The dog was friendly.', breakdown: [{part:'a dog', role:'First mention — any dog', color:'#e84848'},{part:'The dog', role:'Specific — that dog', color:'#4ea87a'}] },
+      { rule: 'Countable vs Uncountable Nouns', explanation: 'Countable: apple → apples (can count). Uncountable: water, information, advice (cannot count, no plural). "Much" with uncountable, "many" with countable.', example: 'many apples / much water', breakdown: [{part:'many apples', role:'Countable', color:'#e84848'},{part:'much water', role:'Uncountable', color:'#4ea87a'}] },
+      { rule: 'Prepositions of Time', explanation: 'AT for precise times: at 5 PM, at night. ON for days/dates: on Monday, on July 4th. IN for longer periods: in June, in 2024, in the morning.', example: 'at 8 AM on Monday in January', breakdown: [{part:'at 8 AM', role:'Precise time', color:'#e84848'},{part:'on Monday', role:'Day', color:'#e8a838'},{part:'in January', role:'Month', color:'#4ea87a'}] }
+    ],
+    phrases: [
+      { phrase: 'Could you tell me how to get to the station?', reading: 'Kood yoo tel mee how too get too thuh STAY-shun?', meaning: 'Directions to the station', parts: [{w:'Could you tell me',r:'Kood yoo tel mee',m:'Polite request',c:'#e84848'},{w:'how to get to',r:'how too get too',m:'direction method',c:'#e8a838'},{w:'the station',r:'thuh STAY-shun',m:'destination',c:'#4ea87a'}], pattern: 'Could you tell me how to get to [place]?' },
+      { phrase: 'I\'ve been studying English for three years', reading: 'Aiv bin STUH-deeing IN-glish for three yeers', meaning: 'Duration of learning', parts: [{w:'I\'ve been studying',r:'Aiv bin STUH-deeing',m:'Present perfect continuous',c:'#e84848'},{w:'English',r:'IN-glish',m:'subject matter',c:'#4ea87a'},{w:'for three years',r:'for three yeers',m:'duration',c:'#e8a838'}], pattern: 'I\'ve been [verb-ing] for [duration]' }
+    ],
+    writing: {
+      system: 'English uses the 26-letter Latin alphabet. Key spelling challenges: silent letters (knife, write, listen), same sound different spellings (to/too/two, there/their/they\'re), and same spelling different sounds (read present vs read past). Capitalization: first word of sentence, proper nouns, "I". Punctuation: period (.), comma (,), question mark (?), exclamation (!), apostrophe (\').',
+      chars: [
+        {char:'th',reading:'TH / THH',meaning:'digraph',strokes:'—',note:'Two sounds: voiced (this, the) = /ð/, voiceless (think, three) = /θ/'},
+        {char:'sh',reading:'SH',meaning:'digraph',strokes:'—',note:'Always /ʃ/: she, ship, wash, nation'},
+        {char:'ch',reading:'CH',meaning:'digraph',strokes:'—',note:'Usually /tʃ/: chair, church. Sometimes /k/: school, chemistry. Sometimes /ʃ/: machine'},
+        {char:'ough',reading:'various',meaning:'trigraph',strokes:'—',note:'6+ pronunciations: though(OH), through(OO), rough(UFF), thought(AW), cough(AWF), bough(OW)'},
+        {char:'tion',reading:'shun',meaning:'suffix',strokes:'—',note:'Very common: nation, station, education, information. Always /ʃən/.'},
+        {char:'ee',reading:'EE',meaning:'vowel digraph',strokes:'—',note:'Long "e" sound: see, tree, meet, green'},
+        {char:'ea',reading:'EE / EH',meaning:'vowel digraph',strokes:'—',note:'Usually /i:/ (eat, read) but also /ɛ/ (bread, head, heavy)'},
+        {char:'ing',reading:'ing',meaning:'suffix',strokes:'—',note:'Progressive aspect: running, eating. Also a noun: meeting, painting'}
+      ]
+    },
+    conversations: [
+      { title: 'Asking for Directions', lines: [
+        {speaker:'You', text:'Excuse me, could you tell me how to get to the nearest pharmacy?', reading:'ex-KYOOZ mee, kood yoo tel mee how too get too thuh neer-est FAR-muh-see?', meaning:'—', side:'right'},
+        {speaker:'Local', text:'Sure! Go straight ahead for two blocks, then turn left at the traffic light.', reading:'SHOOR! goh strayt uh-HED for too bloks, then turn left at thuh TRAF-ik lyte.', meaning:'—', side:'left'},
+        {speaker:'You', text:'Straight ahead, then left. Got it. Is it far?', reading:'strayt uh-HED, then left. got it. iz it far?', meaning:'—', side:'right'},
+        {speaker:'Local', text:'No, it\'s about a five-minute walk. You\'ll see it on the right.', reading:'noh, its uh-BOUT a fyv-MIN-it walk. yool see it on thuh ryte.', meaning:'—', side:'left'}
+      ]}
+    ]
+  }
+};
+
+// ========== RENDER LOGIC ==========
+function render() {
+  const app = document.getElementById('app');
+  if (state.view === 'select') renderLanguageSelect(app);
+  else renderLearnView(app);
+}
+
+function renderLanguageSelect(app) {
+  const langs = Object.entries(LANGUAGES);
+  app.innerHTML = `<div class="fade-in max-w-5xl mx-auto px-6 pt-16"><header class="text-center mb-12"><div class="flex items-center justify-center gap-3 mb-6"><div class="w-10 h-10 rounded-lg bg-accent flex items-center justify-center text-bg"><i class="fas fa-language text-xl"></i></div><span class="text-3xl font-bold font-serif">Polyglot</span></div><h1 class="text-6xl font-black mb-4 leading-tight">Master Any Language<br><span class="text-accent">From the Ground Up</span></h1><p class="text-lg text-fg2 max-w-2xl mx-auto">AI-powered system with tutorials, vocabulary, grammar, and conversations.</p></header><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${langs.map(([k, l]) => `<div class="lang-card" onclick="selectLanguage('${k}')"><div class="flex items-center gap-4 mb-4"><span class="text-4xl">${l.flag}</span><div><h3 class="text-xl font-bold">${l.name}</h3><p class="text-sm text-muted">${l.native}</p></div></div><p class="text-sm text-fg2 mb-4">${l.description}</p><div class="flex gap-2"><span class="tag bg-accent bg-opacity-10 text-accent">${l.family}</span><span class="tag bg-accent3 bg-opacity-10 text-accent3">${l.script}</span></div></div>`).join('')}</div></div>`;
+}
+
+function renderLearnView(app) {
+  const l = LANGUAGES[state.lang]; const r = getRank(save.xp);
+  app.innerHTML = `<div class="flex min-h-screen"><aside class="sidebar w-64 bg-bg2 border-r border-border p-4 flex flex-col gap-1 overflow-y-auto"><button onclick="goBack()" class="text-[10px] text-muted mb-4 flex items-center gap-2 uppercase tracking-widest font-bold"><i class="fas fa-arrow-left"></i> All Languages</button><div class="p-4 bg-card rounded-xl border border-border mb-6"><div class="flex items-center gap-3 mb-3"><span class="text-2xl">${l.flag}</span><div><div class="font-bold text-sm">${l.name}</div><div class="text-[10px] text-muted">${l.native}</div></div></div><div class="rank-badge" style="background:${r.bg};color:${r.color};"><i class="fas ${r.icon}"></i> ${r.name}</div></div>${[{id:'tutorial',icon:'fa-graduation-cap',label:'Tutorial'},{id:'vocabulary',icon:'fa-book',label:'Vocabulary'},{id:'phrases',icon:'fa-puzzle-piece',label:'Phrases'},{id:'grammar',icon:'fa-spell-check',label:'Grammar'},{id:'writing',icon:'fa-pen-fancy',label:'Writing'},{id:'conversation',icon:'fa-comments',label:'Dialogues'},{id:'practice',icon:'fa-brain',label:'Practice'},{id:'flashcards',icon:'fa-clone',label:'Flashcards'},{id:'memory',icon:'fa-th-large',label:'Memory Match'},{id:'speed',icon:'fa-stopwatch',label:'Speed Round'},{id:'ai_tutor',icon:'fa-robot',label:'AI Tutor',ai:true},{id:'ai_conv',icon:'fa-comment-dots',label:'AI Practice',ai:true},{id:'settings',icon:'fa-cog',label:'Settings'}].map(m=>`<button class="module-btn ${state.module===m.id?'active':''} ${m.ai?'ai-mod':''}" onclick="setModule('${m.id}')"><i class="fas ${m.icon}"></i> ${m.label}</button>`).join('')}</aside><main class="flex-1 overflow-y-auto max-h-screen relative" id="mainContent"><div class="stats-bar"><div class="stat-item"><i class="fas fa-bolt"></i> Streak: <span class="stat-val">${save.streak}</span></div><div class="stat-item"><i class="fas fa-star"></i> XP: <span class="stat-val">${save.xp}</span></div><div class="stat-item"><i class="fas fa-crown"></i> Rank: <span class="stat-val" style="color:${r.color}">${r.name}</span></div><div class="ml-auto stat-item"><i class="fas fa-robot"></i> AI Status: <span class="stat-val ${ai.connected?'text-success':'text-danger'}">${ai.connected?'Online':'Offline'}</span></div></div><div class="p-8 max-w-4xl mx-auto">${renderModule(l)}</div></main></div>`;
+}
+
+function renderModule(l) {
+  switch(state.module) {
+    case 'tutorial': return renderTutorial(l); case 'vocabulary': return renderVocabulary(l); case 'phrases': return renderPhrases(l); case 'grammar': return renderGrammar(l); case 'writing': return renderWriting(l); case 'conversation': return renderConversation(l); case 'practice': return renderPractice(l); case 'ai_tutor': return renderAITutor(l); case 'ai_conv': return renderAIConv(l); case 'settings': return renderSettings();
+    case 'flashcards': return renderFlashcards(l); case 'memory': return renderMemory(l); case 'speed': return renderSpeedRound(l);
+    default: return '';
+  }
+}
+
+function renderFlashcards(l) {
+  const v = l.vocabulary[state.flashcardIndex];
+  return `<div class="fade-in"><h2 class="text-3xl font-bold mb-2">Flashcards</h2><p class="text-muted text-sm mb-8">Card ${state.flashcardIndex + 1} of ${l.vocabulary.length}</p><div class="flashcard-container" onclick="state.flashcardFlipped = !state.flashcardFlipped; render();"><div class="flashcard ${state.flashcardFlipped ? 'flipped' : ''}"><div class="flashcard-front"><div class="text-5xl font-bold mb-4 font-serif">${v.word}</div><div class="text-muted italic">${v.reading}</div><div class="mt-8 text-[10px] text-accent font-bold uppercase tracking-widest">Click to flip</div></div><div class="flashcard-back"><div class="text-3xl font-bold mb-4">${v.meaning}</div><div class="text-fg2 text-sm max-w-xs">${v.usage}</div><div class="mt-8"><button class="speak-btn" onclick="event.stopPropagation(); speak('${v.word}', '${l.code}')"><i class="fas fa-volume-up"></i></button></div></div></div></div><div class="flex justify-center gap-6 mt-12"><button class="nav-arrow" onclick="navFlashcards(-1)" ${state.flashcardIndex === 0 ? 'disabled' : ''}><i class="fas fa-arrow-left"></i></button><button class="nav-arrow" onclick="navFlashcards(1)" ${state.flashcardIndex === l.vocabulary.length - 1 ? 'disabled' : ''}><i class="fas fa-arrow-right"></i></button></div></div>`;
+}
+
+function renderMemory(l) {
+  if (!state.memoryCards.length) initMemory(l);
+  return `<div class="fade-in"><h2 class="text-3xl font-bold mb-2">Memory Match</h2><p class="text-muted text-sm mb-8">Find all ${l.vocabulary.slice(0, 8).length} pairs.</p><div class="memory-grid">${state.memoryCards.map((c, i) => `<div class="memory-card ${c.flipped ? 'flipped' : ''} ${c.matched ? 'matched' : ''}" onclick="flipMemory(${i})">${c.flipped || c.matched ? c.val : '<i class="fas fa-question text-muted opacity-30"></i>'}</div>`).join('')}</div><div class="mt-12 text-center"><button class="nav-arrow" onclick="initMemory(LANGUAGES[state.lang])"><i class="fas fa-sync-alt mr-2"></i> Reset Game</button></div></div>`;
+}
+
+function renderSpeedRound(l) {
+  if (!state.speedRoundActive) return `<div class="fade-in text-center py-20"><h2 class="text-5xl font-black mb-6">Speed Round</h2><p class="text-lg text-fg2 mb-10">Answer as many as you can in 60 seconds.</p><button class="nav-arrow px-12 py-4 bg-accent text-bg font-bold text-lg" onclick="startSpeedRound()">START ROUND</button></div>`;
+  return `<div class="fade-in"><div class="flex justify-between items-center mb-10"><div class="text-2xl font-bold font-serif">Score: ${state.speedRoundScore}</div><div class="flex items-center gap-4"><div class="text-2xl font-bold text-accent">${state.speedRoundTime}s</div><div class="timer-ring" style="animation-duration: ${state.speedRoundTime}s"></div></div></div><div class="content-card p-16 text-center mb-8"><div class="text-sm text-accent font-bold uppercase mb-4">What does this mean?</div><h3 class="text-5xl font-bold mb-4 font-serif">${state.speedRoundQ.word}</h3></div><div class="grid grid-cols-2 gap-4">${state.speedRoundQ.options.map((o, i) => `<button class="quiz-option py-6 text-center text-lg font-bold" onclick="answerSpeedRound(${i})">${o}</button>`).join('')}</div></div>`;
+}
+
+function renderTutorial(l) {
+  const step = l.tutorial[state.tutorialStep];
+  return `<div class="fade-in"><h2 class="text-3xl font-bold mb-2">Tutorial</h2><p class="text-muted text-sm mb-8">Step ${state.tutorialStep+1} of ${l.tutorial.length}</p><div class="progress-bar mb-8"><div class="progress-bar-fill" style="width:${((state.tutorialStep+1)/l.tutorial.length)*100}%"></div></div><div class="content-card p-10"><h3 class="text-2xl font-bold mb-4">${step.title}</h3><p class="text-lg leading-relaxed text-fg2">${step.body}</p></div><div class="flex justify-between mt-8"><button class="nav-arrow" onclick="navTutorial(-1)" ${state.tutorialStep===0?'disabled':''}><i class="fas fa-arrow-left mr-2"></i> Previous</button><button class="nav-arrow" onclick="navTutorial(1)" ${state.tutorialStep===l.tutorial.length-1?'disabled':''}>Next <i class="fas fa-arrow-right ml-2"></i></button></div></div>`;
+}
+
+function renderVocabulary(l) {
+  return `<div class="fade-in"><h2 class="text-3xl font-bold mb-6">Vocabulary & Semantics</h2><div class="grid gap-4">${l.vocabulary.map((v,i)=>`<div class="vocab-card" onclick="toggleVocab(${i})"><div class="flex-1"><div class="flex items-center gap-3 mb-1"><span class="text-xl font-bold font-serif">${v.word}</span><span class="text-sm text-muted italic">${v.reading}</span><span class="tag bg-accent bg-opacity-10 text-accent">${v.type}</span></div><div class="text-fg2">${v.meaning}</div><div id="v-det-${i}" class="hidden mt-4 pt-4 border-t border-border"><div class="text-[10px] uppercase font-bold text-accent mb-1 tracking-wider">Usage & Context</div><p class="text-sm text-fg2 leading-relaxed mb-4">${v.usage}</p><div class="example-box"><div class="text-sm font-bold">${v.example}</div><div class="text-xs text-muted">${v.exampleMeaning}</div></div><button class="ai-ask-btn mt-4" onclick="event.stopPropagation(); askAIAboutWord(${i})"><i class="fas fa-magic"></i> AI Insights</button><div id="ai-word-${i}"></div></div></div><div class="flex gap-2"><button class="speak-btn" onclick="event.stopPropagation(); speak('${v.word}', '${l.code}')"><i class="fas fa-volume-up"></i></button><button class="speak-btn" id="rec-btn-${i}" onclick="event.stopPropagation(); analyzePronunciation('${v.word}', ${i})"><i class="fas fa-microphone"></i></button></div></div>`).join('')}</div></div>`;
+}
+
+function renderPhrases(l) {
+  if (!l.phrases.length) return `<div class="text-center py-12 text-muted">No phrases yet.</div>`;
+  return `<div class="fade-in"><h2 class="text-3xl font-bold mb-6">Phrase Builder</h2>${l.phrases.map(p => `<div class="content-card"><div class="flex justify-between items-start mb-6"><div><div class="text-3xl font-bold font-serif mb-1">${p.phrase}</div><div class="text-muted italic text-sm mb-2">${p.reading}</div><div class="text-lg text-fg2">${p.meaning}</div></div><button class="speak-btn" onclick="speak('${p.phrase}', '${l.code}')"><i class="fas fa-volume-up"></i></button></div><div class="mb-6"><div class="text-[10px] uppercase font-bold text-accent mb-3">Breakdown</div><div class="flex flex-wrap items-center gap-2">${p.parts.map(pt => `<div class="text-center"><span class="phrase-part" style="background:${pt.c}15;border:1px solid ${pt.c}30;color:${pt.c}">${pt.w}</span><div class="text-[9px] text-muted mt-1">${pt.m}</div></div>`).join('<span class="text-border mx-1">+</span>')}</div></div><div class="bg-bg p-4 rounded-lg border border-border text-sm font-mono flex items-center gap-3"><span class="text-[10px] bg-accent3 bg-opacity-20 text-accent3 px-2 py-0.5 rounded font-bold">PATTERN</span><span class="text-fg2">${p.pattern}</span></div></div>`).join('')}</div>`;
+}
+
+function renderGrammar(l) {
+  if (!l.grammar.length) return `<div class="text-center py-12 text-muted">No grammar yet.</div>`;
+  return `<div class="fade-in"><h2 class="text-3xl font-bold mb-6">Grammar Structure</h2>${l.grammar.map((g,i) => `<div class="grammar-rule"><h4 class="text-xl font-bold mb-2 font-serif">${g.rule}</h4><p class="mb-6 text-fg2 leading-relaxed">${g.explanation}</p><div class="example-box mb-4"><div class="flex flex-wrap gap-4">${g.breakdown.map(b => `<div class="flex flex-col"><span class="px-4 py-2 rounded-lg bg-accent bg-opacity-10 border border-accent border-opacity-20 text-accent font-bold">${b.part}</span><span class="text-[10px] text-muted text-center mt-1 uppercase font-bold">${b.role}</span></div>`).join('')}</div></div><button class="ai-ask-btn" onclick="askAIAboutGrammar(${i})"><i class="fas fa-robot"></i> AI Deep Dive</button><div id="ai-gram-${i}"></div></div>`).join('')}</div>`;
+}
+
+function renderWriting(l) {
+  return `<div class="fade-in"><h2 class="text-3xl font-bold mb-2">Writing System</h2><p class="text-muted text-sm mb-8">${l.script} of ${l.name}.</p><div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">${l.writing.chars.map((c,i) => `<div class="writing-char" onclick="openCharPanel(${i})">${c.char}<div class="char-label">${c.reading}</div></div>`).join('')}</div></div>`;
+}
+
+function renderConversation(l) {
+  if (!l.conversations.length) return `<div class="text-center py-12 text-muted">No dialogues yet.</div>`;
+  return `<div class="fade-in"><h2 class="text-3xl font-bold mb-6">Conversations</h2>${l.conversations.map(c => `<div class="content-card p-8"><h4 class="text-xl font-bold mb-6 font-serif flex items-center gap-3"><i class="fas fa-comments text-accent"></i> ${c.title}</h4><div class="flex flex-col gap-4">${c.lines.map(ln => `<div class="dialogue-bubble dialogue-${ln.side}" onclick="speak('${ln.text}', '${l.code}')"><div class="text-[9px] font-bold text-accent mb-1 uppercase tracking-widest">${ln.speaker}</div><div class="font-bold text-sm mb-1">${ln.text}</div><div class="text-xs text-muted italic mb-1">${ln.reading}</div><div class="text-xs text-fg2 opacity-80">${ln.meaning}</div></div>`).join('')}</div></div>`).join('')}</div>`;
+}
+
+function renderPractice(l) {
+  if (!state._quizQuestions) { state._quizQuestions = generateQuiz(l); state.quizIndex = 0; state.quizScore = 0; state.quizAnswered = false; }
+  const qs = state._quizQuestions; if (!qs.length) return `<div class="text-center py-12 text-muted">Not enough data for quiz.</div>`;
+  if (state.quizIndex >= qs.length) return `<div class="fade-in text-center py-16"><div class="w-20 h-20 bg-success bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-6"><i class="fas fa-trophy text-4xl text-success"></i></div><h2 class="text-4xl font-black mb-2">Complete!</h2><p class="text-lg text-fg2 mb-8">Score: ${state.quizScore}/${qs.length}</p><button class="nav-arrow" onclick="resetQuiz()">Try Again</button></div>`;
+  const q = qs[state.quizIndex];
+  return `<div class="fade-in"><h2 class="text-3xl font-bold mb-2">Quiz</h2><p class="text-muted text-sm mb-8">Q ${state.quizIndex+1}/${qs.length}</p><div class="progress-bar mb-10"><div class="progress-bar-fill" style="width:${((state.quizIndex+1)/qs.length)*100}%"></div></div><div class="content-card p-12 text-center mb-6"><div class="text-[10px] text-accent font-bold uppercase mb-4">${q.type}</div><h3 class="text-3xl font-bold mb-4 font-serif">${q.question}</h3></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4">${q.options.map((o,i)=>`<button class="quiz-option ${state.quizAnswered?(i===q.correct?'correct':(i===q.selected?'wrong':'')):''}" onclick="answerQuiz(${i})" ${state.quizAnswered?'disabled':''}><span class="font-bold opacity-30 mr-3">${String.fromCharCode(65+i)}</span> ${o}</button>`).join('')}</div>${state.quizAnswered?`<div class="mt-8 text-right"><button class="nav-arrow" onclick="nextQuestion()">Next <i class="fas fa-arrow-right ml-2"></i></button></div>`:''}</div>`;
+}
+
+function renderAITutor(l) {
+  return `<div class="fade-in"><div class="flex items-center gap-4 mb-2"><h2 class="text-3xl font-bold">AI Tutor</h2><div class="stat-item bg-ai-bg text-ai px-3 py-1 rounded-full text-[10px] font-bold border border-ai-border tracking-wider"><i class="fas fa-bolt"></i> POWERED BY LLM</div></div><p class="text-sm text-muted mb-8">Your personal ${l.name} expert.</p><div class="ai-chat-area" id="aiChatArea">${!state.aiChat.length?'<div class="text-center py-12 text-muted text-sm italic">Ask me anything!</div>':''}${state.aiChat.map(m=>`<div class="ai-msg ai-msg-${m.role}">${mdToHtml(m.content)}</div>`).join('')}${state.aiLoading?'<div class="ai-msg ai-msg-assistant">...</div>':''}</div><div class="ai-input-area"><input type="text" class="ai-input" id="aiInput" placeholder="Ask something..." onkeydown="if(event.key==='Enter') sendChat()"><button class="ai-send" onclick="sendChat()" ${state.aiLoading?'disabled':''}><i class="fas fa-paper-plane"></i></button></div></div>`;
+}
+
+function renderAIConv(l) {
+  if (!state.aiConvTopic) return `<div class="fade-in"><h2 class="text-3xl font-bold mb-6">Conversation Practice</h2><div class="grid grid-cols-2 gap-4">${['Ordering Coffee','At the Airport','Job Interview','Booking a Hotel'].map(t=>`<div class="ai-topic-card" onclick="startAIConv('${t}')">${t}</div>`).join('')}</div></div>`;
+  return `<div class="fade-in"><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold font-serif">${state.aiConvTopic}</h2><button class="text-xs text-muted" onclick="state.aiConvTopic=null;render();"><i class="fas fa-times"></i> End</button></div><div class="ai-chat-area" id="aiChatArea">${state.aiConvMessages.map(m=>`<div class="ai-msg ai-msg-${m.role}">${mdToHtml(m.content)}</div>`).join('')}${state.aiLoading?'<div class="ai-msg ai-msg-assistant">...</div>':''}</div><div class="ai-input-area"><input type="text" class="ai-input" id="aiConvInput" placeholder="Reply in ${l.name}..." onkeydown="if(event.key==='Enter') sendAIConv()"><button class="ai-send" onclick="sendAIConv()"><i class="fas fa-paper-plane"></i></button></div></div>`;
+}
+
+function renderSettings() {
+  return `<div class="fade-in"><h2 class="text-3xl font-bold mb-8">Settings</h2><div class="content-card p-10"><div class="grid gap-6"><div><label class="text-[10px] font-bold text-muted uppercase block mb-2">Student ID</label><input type="text" class="setting-input" id="studentIdInput" value="${save.studentId}"></div><div><label class="text-[10px] font-bold text-muted uppercase block mb-2">Backend API Base</label><input type="text" class="setting-input" id="aiUrlInput" value="${save.aiUrl}"></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-muted uppercase block mb-2">LLM Provider</label><select class="setting-input" id="aiProviderSelect" onchange="updateModels()">${state.providers.map(p=>`<option value="${p.id}" ${save.aiProvider===p.id?'selected':''}>${p.name}</option>`).join('')}</select></div><div><label class="text-[10px] font-bold text-muted uppercase block mb-2">Active Model</label><select class="setting-input" id="aiModelSelect">${getCurrentProviderModels().map(m=>`<option value="${m}" ${save.aiModel===m?'selected':''}>${m}</option>`).join('')}</select></div></div><div class="pt-6 border-t border-border mt-4 flex gap-4"><button class="nav-arrow" onclick="saveSettings()">Save Settings</button><button class="nav-arrow" onclick="ai.testConnection().then(r=>showToast(r?'Connected!':'Failed', r?'success':'error'))">Test Connection</button></div></div></div></div>`;
+}
+
+// ========== ACTIONS ==========
+function selectLanguage(k) {
+  state.lang = k; state.view = 'learn'; state.module = 'tutorial'; state.tutorialStep = 0;
+  state._quizQuestions = null; state.aiChat = []; state.aiConvTopic = null;
+  state.flashcardIndex = 0; state.memoryCards = []; state.speedRoundActive = false;
+  checkStreak(); render();
+}
+function goBack() { state.view = 'select'; state.lang = null; render(); }
+function setModule(m) {
+  state.module = m;
+  if (m === 'practice') state._quizQuestions = null;
+  if (m === 'memory') state.memoryCards = [];
+  if (m === 'speed') state.speedRoundActive = false;
+  render(); document.getElementById('mainContent').scrollTop = 0;
+}
+function navTutorial(d) { state.tutorialStep += d; if (d > 0) addXP(20); render(); }
+
+function navFlashcards(d) {
+  state.flashcardIndex += d; state.flashcardFlipped = false; addXP(5); render();
+}
+
+function initMemory(l) {
+  const v = l.vocabulary.slice(0, 8);
+  const cards = [];
+  v.forEach(item => {
+    cards.push({ val: item.word, matchId: item.word, flipped: false, matched: false });
+    cards.push({ val: item.meaning, matchId: item.word, flipped: false, matched: false });
+  });
+  state.memoryCards = cards.sort(() => Math.random() - 0.5);
+  state.memoryFlipped = []; state.memoryMatches = 0; state.memoryLocked = false;
+  render();
+}
+
+function flipMemory(i) {
+  if (state.memoryLocked || state.memoryCards[i].flipped || state.memoryCards[i].matched) return;
+  state.memoryCards[i].flipped = true;
+  state.memoryFlipped.push(i);
+  render();
+  if (state.memoryFlipped.length === 2) {
+    state.memoryLocked = true;
+    const [a, b] = state.memoryFlipped;
+    if (state.memoryCards[a].matchId === state.memoryCards[b].matchId) {
+      state.memoryCards[a].matched = true;
+      state.memoryCards[b].matched = true;
+      state.memoryMatches++;
+      addXP(30);
+      state.memoryFlipped = [];
+      state.memoryLocked = false;
+      if (state.memoryMatches === 8) showToast('Perfect Match!', 'success');
+      render();
+    } else {
+      setTimeout(() => {
+        state.memoryCards[a].flipped = false;
+        state.memoryCards[b].flipped = false;
+        state.memoryFlipped = [];
+        state.memoryLocked = false;
+        render();
+      }, 1000);
+    }
+  }
+}
+
+function startSpeedRound() {
+  state.speedRoundActive = true;
+  state.speedRoundScore = 0;
+  state.speedRoundTime = 60;
+  genSpeedQ();
+  const timer = setInterval(() => {
+    state.speedRoundTime--;
+    if (state.speedRoundTime <= 0) {
+      clearInterval(timer);
+      state.speedRoundActive = false;
+      showToast(`Finished! Score: ${state.speedRoundScore}`, 'success');
+      addXP(state.speedRoundScore * 10);
+      render();
+    } else {
+      render();
+    }
+  }, 1000);
+}
+
+function genSpeedQ() {
+  const v = LANGUAGES[state.lang].vocabulary;
+  const vi = v[Math.floor(Math.random() * v.length)];
+  const o = v.filter(x => x.word !== vi.word).sort(() => Math.random() - 0.5).slice(0, 3).map(x => x.meaning);
+  const opts = [...o, vi.meaning].sort(() => Math.random() - 0.5);
+  state.speedRoundQ = { word: vi.word, options: opts, correct: opts.indexOf(vi.meaning) };
+}
+
+function answerSpeedRound(i) {
+  if (i === state.speedRoundQ.correct) {
+    state.speedRoundScore++;
+    showToast('+1', 'success');
+  } else {
+    showToast('Wrong!', 'error');
+  }
+  genSpeedQ();
+  render();
+}
+function toggleVocab(i) { document.getElementById(`v-det-${i}`).classList.toggle('hidden'); }
+async function askAIAboutWord(i) {
+  const v = LANGUAGES[state.lang].vocabulary[i]; const t = document.getElementById(`ai-word-${i}`); t.innerHTML = '<div class="ai-inline">Analyzing...</div>';
+  const r = await ai.chat([{role:'user', content:`Explain nuance: "${v.word}" in ${LANGUAGES[state.lang].name}. 3 examples.`}], LANGUAGES[state.lang]);
+  t.innerHTML = `<div class="ai-inline"><h4>AI Insight</h4>${mdToHtml(r)}</div>`; addXP(10);
+}
+async function askAIAboutGrammar(i) {
+  const g = LANGUAGES[state.lang].grammar[i]; const t = document.getElementById(`ai-gram-${i}`); t.innerHTML = '<div class="ai-inline">Generating...</div>';
+  const r = await ai.chat([{role:'user', content:`Explain rule: "${g.rule}". ${g.explanation}`}], LANGUAGES[state.lang]);
+  t.innerHTML = `<div class="ai-inline"><h4>AI Deep Dive</h4>${mdToHtml(r)}</div>`; addXP(10);
+}
+async function sendChat() {
+  const i = document.getElementById('aiInput'); const t = i.value.trim(); if (!t || state.aiLoading) return;
+  state.aiChat.push({ role: 'user', content: t }); i.value = ''; state.aiLoading = true; render();
+  const r = await ai.chat(state.aiChat.slice(-10), LANGUAGES[state.lang]); if (r) state.aiChat.push({ role: 'assistant', content: r });
+  state.aiLoading = false; addXP(5); render();
+  const a = document.getElementById('aiChatArea'); if(a) a.scrollTop = a.scrollHeight;
+}
+async function startAIConv(topic) {
+  state.aiConvTopic = topic; state.aiLoading = true; render();
+  const r = await ai.chat([{role:'user', content:`Roleplay conversation about "${topic}" in ${LANGUAGES[state.lang].name}. You start.`}], LANGUAGES[state.lang]);
+  state.aiConvMessages = [{role: 'assistant', content: r || "Let's start!"}]; state.aiLoading = false; render();
+}
+async function sendAIConv() {
+  const i = document.getElementById('aiConvInput'); const t = i.value.trim(); if (!t || state.aiLoading) return;
+  state.aiConvMessages.push({ role: 'user', content: t }); i.value = ''; state.aiLoading = true; render();
+  const r = await ai.chat(state.aiConvMessages.slice(-10), LANGUAGES[state.lang]); if (r) state.aiConvMessages.push({ role: 'assistant', content: r });
+  state.aiLoading = false; addXP(15); render();
+  const a = document.getElementById('aiChatArea'); if(a) a.scrollTop = a.scrollHeight;
+}
+async function analyzePronunciation(word, index) {
+  const b = document.getElementById(`rec-btn-${index}`);
+  if (b.classList.contains('recording')) {
+    b.classList.remove('recording'); showToast('Analyzing...', 'info');
+    const res = await stopRecording(word);
+    if (res) { showToast(`Score: ${res.fluency_score}% - Stress: ${res.stress_level}`, res.fluency_score > 70 ? 'success' : 'info'); addXP(Math.round(res.fluency_score / 2)); }
+  } else { b.classList.add('recording'); await startRecording(); }
+}
+function generateQuiz(l) {
+  const v = l.vocabulary; if (!v || v.length < 2) return [];
+  return v.map(vi => {
+    const o = v.filter(x => x.word !== vi.word).sort(() => Math.random() - 0.5).slice(0, 3);
+    const opts = [...o.map(x => x.meaning), vi.meaning].sort(() => Math.random() - 0.5);
+    return { type: 'Translation', question: `Meaning of "${vi.word}"?`, options: opts, correct: opts.indexOf(vi.meaning), selected: -1 };
+  }).sort(() => Math.random() - 0.5).slice(0, 10);
+}
+function answerQuiz(i) { state.quizAnswered = true; const q = state._quizQuestions[state.quizIndex]; q.selected = i; if (i === q.correct) { state.quizScore++; showToast('Correct!', 'success'); } else showToast('Incorrect', 'error'); render(); }
+function nextQuestion() { state.quizIndex++; state.quizAnswered = false; if (state.quizIndex >= state._quizQuestions.length) addXP(50); render(); }
+function resetQuiz() { state._quizQuestions = null; render(); }
+function saveSettings() { save.studentId = document.getElementById('studentIdInput').value; save.aiUrl = document.getElementById('aiUrlInput').value; save.aiProvider = document.getElementById('aiProviderSelect').value; save.aiModel = document.getElementById('aiModelSelect').value; saveState(); ai.apiBase = save.aiUrl; showToast('Saved', 'success'); }
+function updateModels() { render(); }
+function getCurrentProviderModels() { const pId = document.getElementById('aiProviderSelect')?.value || save.aiProvider; const p = state.providers.find(x => x.id === pId); return p ? p.models : [save.aiModel]; }
+function openCharPanel(i) {
+  const c = LANGUAGES[state.lang].writing.chars[i]; const p = document.getElementById('charPanel'); const o = document.getElementById('charOverlay');
+  p.innerHTML = `<button onclick="closeCharPanel()" class="absolute top-6 right-6 text-muted"><i class="fas fa-times"></i></button><div class="flex flex-col items-center justify-center h-full"><div class="text-[120px] mb-6 font-serif leading-none">${c.char}</div><div class="text-3xl text-accent font-bold mb-4">${c.reading}</div><div class="text-fg2 text-center max-w-xs leading-relaxed mb-10">${c.note}</div><button class="speak-btn w-16 h-16 text-xl" onclick="speak('${c.char}', '${LANGUAGES[state.lang].code}')"><i class="fas fa-volume-up"></i></button></div>`;
+  p.classList.add('open'); o.classList.add('open');
+}
+function closeCharPanel() { document.getElementById('charPanel').classList.remove('open'); document.getElementById('charOverlay').classList.remove('open'); }
+function speak(text, code) { if (!('speechSynthesis' in window)) return; const u = new SpeechSynthesisUtterance(text); u.lang = code; speechSynthesis.speak(u); }
+function showToast(msg, type) {
+  const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = `toast show ${type}`; t.innerText = msg; c.appendChild(t);
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 2500);
+}
+// ========== INIT ==========
+ai.testConnection().then(() => render());
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinguistFlow AI - Apresentacao</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --green: #00ff88;
+  --green-dim: #00cc6a;
+  --red: #ff4444;
+  --yellow: #ffcc00;
+  --blue: #58a6ff;
+  --cyan: #00d4ff;
+  --text: #c9d1d9;
+  --text-dim: #8b949e;
+  --border: #30363d;
+}
+html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+
+/* Slide container */
+.slides { position: relative; width: 100%; height: 100%; }
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  padding: 60px 80px;
+  opacity: 0; transform: translateX(60px);
+  transition: opacity 0.5s, transform 0.5s;
+  pointer-events: none;
+}
+.slide.active {
+  opacity: 1; transform: translateX(0);
+  pointer-events: auto;
+}
+.slide.exit-left {
+  opacity: 0; transform: translateX(-60px);
+}
+
+/* Progress bar */
+#progress { position: fixed; top: 0; left: 0; height: 3px; background: var(--green); transition: width 0.4s; z-index: 100; }
+#slide-counter { position: fixed; bottom: 20px; right: 30px; font-size: 14px; color: var(--text-dim); z-index: 100; }
+
+/* Navigation hints */
+#nav-hint { position: fixed; bottom: 20px; left: 30px; font-size: 12px; color: var(--text-dim); z-index: 100; }
+
+/* Typography */
+h1 { font-size: 3em; color: var(--green); margin-bottom: 0.3em; }
+h2 { font-size: 2.2em; color: var(--green); margin-bottom: 0.5em; text-align: center; }
+h3 { font-size: 1.4em; color: var(--cyan); margin-bottom: 0.5em; }
+p, li { font-size: 1.1em; line-height: 1.7; }
+ul { list-style: none; padding-left: 0; }
+ul li { padding: 6px 0; }
+ul li::before { content: "\25B8 "; color: var(--green); font-weight: bold; }
+.subtitle { font-size: 1.3em; color: var(--text-dim); }
+.highlight { color: var(--green); font-weight: bold; }
+.red { color: var(--red); }
+.yellow { color: var(--yellow); }
+.blue { color: var(--blue); }
+.cyan { color: var(--cyan); }
+.dim { color: var(--text-dim); }
+.center { text-align: center; }
+.wide { width: 100%; max-width: 1100px; }
+
+/* Glow effect */
+.glow {
+  text-shadow: 0 0 10px var(--green), 0 0 40px rgba(0,255,136,0.3);
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+  0%, 100% { text-shadow: 0 0 10px var(--green), 0 0 40px rgba(0,255,136,0.3); }
+  50% { text-shadow: 0 0 20px var(--green), 0 0 60px rgba(0,255,136,0.5), 0 0 80px rgba(0,255,136,0.2); }
+}
+
+/* Stagger animation */
+.stagger > * { opacity: 0; transform: translateY(20px); }
+.slide.active .stagger > * { animation: fade-up 0.5s forwards; }
+.slide.active .stagger > *:nth-child(1) { animation-delay: 0.1s; }
+.slide.active .stagger > *:nth-child(2) { animation-delay: 0.2s; }
+.slide.active .stagger > *:nth-child(3) { animation-delay: 0.3s; }
+.slide.active .stagger > *:nth-child(4) { animation-delay: 0.4s; }
+.slide.active .stagger > *:nth-child(5) { animation-delay: 0.5s; }
+.slide.active .stagger > *:nth-child(6) { animation-delay: 0.6s; }
+.slide.active .stagger > *:nth-child(7) { animation-delay: 0.7s; }
+.slide.active .stagger > *:nth-child(8) { animation-delay: 0.8s; }
+@keyframes fade-up {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Code blocks */
+pre {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 20px; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.85em; line-height: 1.6; overflow-x: auto; width: 100%;
+  tab-size: 4;
+}
+.kw { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.fn { color: #d2a8ff; }
+.num { color: #79c0ff; }
+.type { color: #ff7b72; }
+
+/* Side by side layout */
+.side-by-side { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; width: 100%; max-width: 1100px; }
+.side-by-side > div { min-width: 0; }
+
+/* Architecture diagram */
+.arch-diagram { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; max-width: 900px; }
+.arch-row { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; }
+.arch-box {
+  background: var(--bg2); border: 2px solid var(--border); border-radius: 10px;
+  padding: 18px 28px; text-align: center; min-width: 160px;
+  transition: border-color 0.3s, transform 0.3s;
+}
+.arch-box:hover { border-color: var(--green); transform: translateY(-3px); }
+.arch-box .label { font-weight: bold; font-size: 1em; color: var(--green); }
+.arch-box .detail { font-size: 0.8em; color: var(--text-dim); margin-top: 4px; }
+.arch-arrow { font-size: 1.5em; color: var(--green); }
+.arch-arrow-down { font-size: 1.5em; color: var(--green); }
+
+/* Table */
+table { border-collapse: collapse; width: 100%; max-width: 1000px; }
+th, td { padding: 12px 16px; border: 1px solid var(--border); text-align: left; font-size: 0.95em; }
+th { background: var(--bg2); color: var(--green); font-weight: 600; }
+tr:nth-child(even) { background: rgba(22,27,34,0.5); }
+
+/* Flow animation */
+.flow-steps { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.flow-step {
+  background: var(--bg2); border: 2px solid var(--border); border-radius: 8px;
+  padding: 14px 20px; text-align: center; min-width: 120px;
+  opacity: 0; transform: scale(0.8);
+}
+.slide.active .flow-step { animation: pop-in 0.4s forwards; }
+.slide.active .flow-step:nth-child(1) { animation-delay: 0.2s; }
+.slide.active .flow-step:nth-child(2) { animation-delay: 0.5s; }
+.slide.active .flow-step:nth-child(3) { animation-delay: 0.8s; }
+.slide.active .flow-step:nth-child(4) { animation-delay: 1.1s; }
+.slide.active .flow-step:nth-child(5) { animation-delay: 1.4s; }
+.slide.active .flow-step:nth-child(6) { animation-delay: 1.7s; }
+.slide.active .flow-step:nth-child(7) { animation-delay: 2.0s; }
+.flow-arrow { font-size: 1.4em; color: var(--green); opacity: 0; }
+.slide.active .flow-arrow { animation: pop-in 0.3s forwards; }
+.slide.active .flow-arrow:nth-child(2) { animation-delay: 0.35s; }
+.slide.active .flow-arrow:nth-child(4) { animation-delay: 0.65s; }
+.slide.active .flow-arrow:nth-child(6) { animation-delay: 0.95s; }
+.slide.active .flow-arrow:nth-child(8) { animation-delay: 1.25s; }
+.slide.active .flow-arrow:nth-child(10) { animation-delay: 1.55s; }
+@keyframes pop-in {
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Badge */
+.badge {
+  display: inline-block; padding: 3px 10px; border-radius: 12px;
+  font-size: 0.8em; font-weight: bold;
+}
+.badge-red { background: rgba(255,68,68,0.2); color: var(--red); border: 1px solid var(--red); }
+.badge-yellow { background: rgba(255,204,0,0.15); color: var(--yellow); border: 1px solid var(--yellow); }
+.badge-green { background: rgba(0,255,136,0.15); color: var(--green); border: 1px solid var(--green); }
+
+/* Roadmap / feature grid */
+.feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 900px; }
+.feature-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 24px; border-left: 4px solid var(--green);
+}
+.feature-card h3 { margin-bottom: 10px; }
+.feature-card p { font-size: 0.95em; color: var(--text-dim); }
+
+/* CTA */
+.cta-box {
+  background: var(--bg2); border: 2px solid var(--green); border-radius: 16px;
+  padding: 40px 60px; text-align: center; max-width: 700px;
+}
+
+/* JSON result block */
+.json-result {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px; font-family: 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 0.82em; line-height: 1.5; overflow-x: auto;
+}
+.json-key { color: #79c0ff; }
+.json-str { color: #a5d6ff; }
+.json-val { color: var(--green); }
+
+/* Graph diagram */
+.graph-box {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 24px; font-family: 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 0.9em; line-height: 1.8; max-width: 700px; width: 100%;
+}
+
+/* Heatmap grid */
+.heatmap-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; max-width: 500px; }
+.heatmap-cell {
+  padding: 10px; border-radius: 6px; text-align: center; font-size: 0.85em;
+  font-weight: bold;
+}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+<div id="slide-counter"></div>
+<div id="nav-hint">&larr; &rarr; navegar &nbsp;|&nbsp; touch/swipe</div>
+
+<div class="slides">
+
+<!-- SLIDE 1: Capa -->
+<div class="slide active" data-slide="0">
+  <h1 class="glow" style="font-size:3.5em; margin-bottom:10px;">LinguistFlow AI</h1>
+  <p class="subtitle" style="font-size:1.5em; margin-bottom:30px;">Aprendizado Adaptativo de Idiomas com IA</p>
+  <div style="display:flex; gap:20px; margin-top:20px;">
+    <span class="badge badge-green">Adaptive Lessons</span>
+    <span class="badge badge-green">Speech Analysis</span>
+    <span class="badge badge-green">Knowledge Graph</span>
+  </div>
+  <p class="dim" style="margin-top:40px; font-size:0.9em;">Pressione &rarr; para comecar</p>
+</div>
+
+<!-- SLIDE 2: O Problema -->
+<div class="slide" data-slide="1">
+  <h2>O Problema</h2>
+  <p class="subtitle center" style="margin-bottom:30px;">Dificuldades no aprendizado de idiomas</p>
+  <div class="stagger wide">
+    <div style="display:flex; align-items:center; gap:16px; padding:16px; background:var(--bg2); border-radius:8px; margin-bottom:12px;">
+      <span class="badge badge-red">1</span>
+      <div><strong class="red">Aulas Genericas</strong><br><span class="dim">Conteudo padronizado que ignora interesses e nivel do aluno</span></div>
+    </div>
+    <div style="display:flex; align-items:center; gap:16px; padding:16px; background:var(--bg2); border-radius:8px; margin-bottom:12px;">
+      <span class="badge badge-red">2</span>
+      <div><strong class="red">Sem Feedback de Pronuncia</strong><br><span class="dim">Alunos praticam sozinhos sem saber se estao pronunciando corretamente</span></div>
+    </div>
+    <div style="display:flex; align-items:center; gap:16px; padding:16px; background:var(--bg2); border-radius:8px; margin-bottom:12px;">
+      <span class="badge badge-red">3</span>
+      <div><strong class="red">Vocabulario Desconectado</strong><br><span class="dim">Palavras aprendidas sem relacao entre si &mdash; sem contexto semantico</span></div>
+    </div>
+    <div style="display:flex; align-items:center; gap:16px; padding:16px; background:var(--bg2); border-radius:8px;">
+      <span class="badge badge-green">&check;</span>
+      <div><strong class="highlight">LinguistFlow AI</strong><br><span class="dim">IA gera aulas personalizadas, analisa pronuncia e conecta vocabulario em grafo</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: Arquitetura -->
+<div class="slide" data-slide="2">
+  <h2>Arquitetura</h2>
+  <div class="arch-diagram" style="margin-top:20px;">
+    <div class="arch-row">
+      <div class="arch-box" style="border-color:var(--blue);">
+        <div class="label" style="color:var(--blue);">Frontend Streamlit</div>
+        <div class="detail">Python &bull; Layout 2 Colunas &bull; File Upload</div>
+      </div>
+    </div>
+    <div class="arch-arrow-down">&darr;</div>
+    <div class="arch-row">
+      <div class="arch-box" style="border-color:var(--green);">
+        <div class="label">API FastAPI (Python)</div>
+        <div class="detail">LiteLLM &bull; Whisper &bull; Librosa &bull; Motor &bull; Neo4j async</div>
+      </div>
+      <div class="arch-arrow">&harr;</div>
+      <div class="arch-box" style="border-color:var(--cyan);">
+        <div class="label" style="color:var(--cyan);">LLM Providers</div>
+        <div class="detail">OpenAI &bull; Claude &bull; Gemini &bull; OpenRouter &bull; <span class="highlight">Ollama (local)</span></div>
+      </div>
+    </div>
+    <div class="arch-arrow-down">&darr;</div>
+    <div class="arch-row">
+      <div class="arch-box" style="border-color:var(--yellow);">
+        <div class="label" style="color:var(--yellow);">MongoDB</div>
+        <div class="detail">Heatmap &bull; Student Data</div>
+      </div>
+      <div style="width:40px;"></div>
+      <div class="arch-box" style="border-color:var(--cyan);">
+        <div class="label" style="color:var(--cyan);">Neo4j</div>
+        <div class="detail">Knowledge Graph &bull; Word Relations</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 4: Backend FastAPI + LiteLLM -->
+<div class="slide" data-slide="3">
+  <h2>Backend &mdash; FastAPI + LiteLLM</h2>
+  <div class="stagger wide">
+    <ul style="margin-bottom:20px;">
+      <li><span class="highlight">LiteLLM</span> &mdash; Interface unificada para OpenAI, Claude, Gemini, OpenRouter, Ollama</li>
+      <li><span class="highlight">Pydantic v2</span> &mdash; Validacao tipada de todos os parametros (regex + length)</li>
+      <li><span class="highlight">Motor async</span> &mdash; Cliente MongoDB nao-bloqueante para heatmap</li>
+      <li><span class="highlight">Neo4j async driver</span> &mdash; Grafo de conhecimento vocabular</li>
+      <li><span class="highlight">Single service</span> &mdash; Lessons + Whisper + Librosa no mesmo container</li>
+    </ul>
+    <pre><span class="cmt"># app/lessons/routes.py &mdash; Aula adaptativa</span>
+<span class="kw">@router</span>.get(<span class="str">""</span>, response_class=PlainTextResponse)
+<span class="kw">async def</span> <span class="fn">generate_lesson</span>(
+    query: LessonQuery = Depends(),
+    llm: LlmRouter = Depends(get_llm_router),
+) -&gt; <span class="type">str</span>:
+    prompt = <span class="fn">build_prompt</span>(query.topic, query.hobby)
+    <span class="kw">return await</span> llm.<span class="fn">generate</span>(query.provider, query.model, prompt)</pre>
+  </div>
+</div>
+
+<!-- SLIDE 5: Multi-LLM Router -->
+<div class="slide" data-slide="4">
+  <h2>Multi-LLM Router (LiteLLM)</h2>
+  <p class="dim center" style="margin-bottom:20px;">Trocar de provider sem rebuild &mdash; whitelist garante seguranca</p>
+  <div class="wide stagger">
+    <pre><span class="cmt"># app/llm/router.py</span>
+<span class="kw">async def</span> <span class="fn">generate</span>(self, provider, model, prompt) -&gt; <span class="type">str</span>:
+    entry, chosen = self.<span class="fn">_resolve</span>(provider, model)  <span class="cmt"># whitelist check</span>
+    <span class="kw">return await</span> litellm.<span class="fn">acompletion</span>(
+        model=<span class="str">f"{LITELLM_PREFIX[entry.name]}/{chosen}"</span>,
+        messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: prompt}],
+        api_key=entry.api_key, api_base=entry.base_url,
+        temperature=<span class="num">0.7</span>, max_tokens=<span class="num">1024</span>, timeout=<span class="num">120</span>,
+    )</pre>
+    <table style="margin-top:20px;">
+      <thead><tr><th>Provider</th><th>Modelos exemplo</th><th>Env var chave</th><th>Custo</th></tr></thead>
+      <tbody>
+        <tr><td>OpenAI</td><td>gpt-4o-mini, gpt-4o</td><td>OPENAI_API_KEY</td><td>Pago</td></tr>
+        <tr><td>Claude</td><td>claude-haiku-4-5, claude-sonnet-4-6</td><td>ANTHROPIC_API_KEY</td><td>Pago</td></tr>
+        <tr><td>Gemini</td><td>gemini-2.0-flash, gemini-2.5-pro</td><td>GEMINI_API_KEY</td><td>Free tier</td></tr>
+        <tr><td>OpenRouter</td><td>meta-llama/llama-3.1-70b, ...</td><td>OPENROUTER_API_KEY</td><td>Pago</td></tr>
+        <tr><td><span class="highlight">Ollama</span></td><td>llama3.2, mistral, qwen2.5, phi3</td><td>&mdash; (local)</td><td><span class="highlight">Gratis</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SLIDE 6: Frontend Streamlit -->
+<div class="slide" data-slide="5">
+  <h2>Frontend &mdash; Streamlit</h2>
+  <div class="stagger wide">
+    <ul>
+      <li><span class="highlight">Layout 2 Colunas</span> &mdash; Aula adaptativa + Lab de pronuncia lado a lado</li>
+      <li><span class="highlight">Geracao de Aula</span> &mdash; Seleciona topico + hobby e gera aula com IA</li>
+      <li><span class="highlight">Lab de Pronuncia</span> &mdash; Upload de audio WAV/MP3 para analise</li>
+      <li><span class="highlight">Knowledge Heatmap</span> &mdash; Visualizacao do grafo de vocabulario</li>
+    </ul>
+    <div style="margin-top:30px; background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:30px; max-width:800px;">
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <span style="width:12px;height:12px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
+        <span style="width:12px;height:12px;border-radius:50%;background:#febc2e;display:inline-block;"></span>
+        <span style="width:12px;height:12px;border-radius:50%;background:#28c840;display:inline-block;"></span>
+        <span style="margin-left:20px;color:var(--text-dim);font-size:0.85em;">LinguistFlow AI &mdash; localhost:8501</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:0.85em;">
+        <div style="border:1px solid var(--border); border-radius:6px; padding:12px;">
+          <div style="color:var(--green); font-weight:bold; margin-bottom:8px;">Dynamic Lesson</div>
+          <div class="dim">Provider: <span class="yellow">ollama</span> &nbsp; Model: <span class="yellow">llama3.2</span></div>
+          <div class="dim">Topic: <span class="highlight">Present Perfect</span></div>
+          <div class="dim">Hobby: <span class="blue">Football</span></div>
+          <div class="dim" style="margin-top:8px; padding:8px; background:rgba(0,255,136,0.1); border-radius:4px;">"Today we'll learn Present Perfect through football examples..."</div>
+        </div>
+        <div style="border:1px solid var(--cyan); border-radius:6px; padding:12px;">
+          <div style="color:var(--cyan); font-weight:bold; margin-bottom:8px;">Pronunciation Lab</div>
+          <div class="dim">Accuracy: <span class="highlight">85%</span></div>
+          <div class="dim">Stress: <span class="yellow">Normal</span></div>
+          <div class="dim" style="margin-top:8px;">"I have played football since I was five"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7: Aulas Adaptativas -->
+<div class="slide" data-slide="6">
+  <h2>Aulas Adaptativas</h2>
+  <p class="dim center" style="margin-bottom:30px;">Conteudo personalizado por topico e hobby do aluno</p>
+  <div class="side-by-side">
+    <div>
+      <h3>Input</h3>
+      <div style="margin-top:10px;">
+        <div style="padding:12px; background:var(--bg2); border-radius:6px; margin-bottom:10px; border-left:4px solid var(--blue);">
+          <span class="blue" style="font-weight:bold;">Student ID:</span> STU123<br>
+          <span class="blue" style="font-weight:bold;">Topic:</span> Present Perfect<br>
+          <span class="blue" style="font-weight:bold;">Hobby:</span> Football
+        </div>
+        <div style="padding:12px; background:var(--bg2); border-radius:6px; border-left:4px solid var(--cyan);">
+          <span class="cyan" style="font-weight:bold;">Como funciona:</span><br>
+          <span class="dim">1. FastAPI valida com Pydantic (regex + length)</span><br>
+          <span class="dim">2. LlmRouter resolve provider+model (whitelist)</span><br>
+          <span class="dim">3. LiteLLM chama o provider escolhido</span><br>
+          <span class="dim">4. Conteudo adaptado ao hobby do aluno</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3>Output &mdash; Aula Gerada</h3>
+      <div style="margin-top:10px; padding:16px; background:var(--bg2); border-radius:8px; border-left:4px solid var(--green); font-size:0.9em;">
+        <span class="highlight">Lesson: Present Perfect &amp; Football</span><br><br>
+        <span class="dim">"The Present Perfect tense connects past actions to the present."</span><br><br>
+        <span class="dim"><strong class="yellow">Examples with Football:</strong></span><br>
+        <span class="dim">&bull; "Messi <strong class="highlight">has scored</strong> over 800 goals"</span><br>
+        <span class="dim">&bull; "I <strong class="highlight">have played</strong> football since I was five"</span><br>
+        <span class="dim">&bull; "The team <strong class="highlight">has won</strong> three championships"</span><br><br>
+        <span class="dim"><strong class="yellow">Practice:</strong> Write 3 sentences about your football experience using Present Perfect.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8: Analise de Pronuncia -->
+<div class="slide" data-slide="7">
+  <h2>Analise de Pronuncia</h2>
+  <p class="dim center" style="margin-bottom:30px;">Audio &rarr; Whisper &rarr; Librosa &rarr; Score + Stress</p>
+  <div class="flow-steps">
+    <div class="flow-step" style="border-color:var(--blue);">
+      <div style="font-size:1.5em;">&#127908;</div>
+      <div style="font-size:0.85em; color:var(--blue);">Upload<br>WAV/MP3</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step" style="border-color:var(--cyan);">
+      <div style="font-size:1.5em;">&#129302;</div>
+      <div style="font-size:0.85em; color:var(--cyan);">Whisper<br>STT</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step" style="border-color:var(--yellow);">
+      <div style="font-size:1.5em;">&#127925;</div>
+      <div style="font-size:0.85em; color:var(--yellow);">Librosa<br>Pitch/Energy</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step" style="border-color:var(--green);">
+      <div style="font-size:1.5em;">&#9989;</div>
+      <div style="font-size:0.85em; color:var(--green);">Score<br>+ Stress</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step" style="border-color:var(--yellow);">
+      <div style="font-size:1.5em;">&#128202;</div>
+      <div style="font-size:0.85em; color:var(--yellow);">Heatmap<br>MongoDB</div>
+    </div>
+  </div>
+  <div style="margin-top:40px; max-width:600px;">
+    <div class="json-result">
+{<br>
+&nbsp;&nbsp;<span class="json-key">"transcription"</span>: <span class="json-str">"I have played football"</span>,<br>
+&nbsp;&nbsp;<span class="json-key">"pronunciation_score"</span>: <span class="json-val">0.85</span>,<br>
+&nbsp;&nbsp;<span class="json-key">"stress_level"</span>: <span class="json-str">"Normal"</span>,<br>
+&nbsp;&nbsp;<span class="json-key">"detected_language"</span>: <span class="json-str">"en"</span><br>
+}
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9: Knowledge Graph Neo4j -->
+<div class="slide" data-slide="8">
+  <h2>Knowledge Graph &mdash; Neo4j</h2>
+  <p class="dim center" style="margin-bottom:30px;">Modelo de relacoes entre palavras e contextos</p>
+  <div class="side-by-side">
+    <div>
+      <h3>Modelo de Dados</h3>
+      <div class="graph-box" style="margin-top:10px;">
+        <span class="highlight">(:WordNode)</span><br>
+        &nbsp;&nbsp;{text, language, frequency}<br><br>
+        <span class="cyan">Relacoes:</span><br>
+        &nbsp;&nbsp;<span class="yellow">HAS_ROOT</span> &rarr; raiz da palavra<br>
+        &nbsp;&nbsp;<span class="yellow">SYNONYM_OF</span> &rarr; sinonimo<br>
+        &nbsp;&nbsp;<span class="yellow">USED_IN_CONTEXT</span> &rarr; contexto de uso<br><br>
+        <span class="dim">Exemplo:</span><br>
+        <span class="highlight">(running)</span>&mdash;<span class="yellow">HAS_ROOT</span>&rarr;<span class="highlight">(run)</span><br>
+        <span class="highlight">(running)</span>&mdash;<span class="yellow">SYNONYM_OF</span>&rarr;<span class="highlight">(jogging)</span><br>
+        <span class="highlight">(running)</span>&mdash;<span class="yellow">USED_IN</span>&rarr;<span class="blue">(Sports)</span>
+      </div>
+    </div>
+    <div>
+      <h3>Beneficios</h3>
+      <div style="margin-top:10px;">
+        <div style="padding:12px; background:var(--bg2); border-radius:6px; margin-bottom:10px; border-left:4px solid var(--green);">
+          <strong class="highlight">Conexoes Semanticas</strong><br>
+          <span class="dim">Palavras relacionadas por raiz, sinonimia e contexto</span>
+        </div>
+        <div style="padding:12px; background:var(--bg2); border-radius:6px; margin-bottom:10px; border-left:4px solid var(--cyan);">
+          <strong class="cyan">Aprendizado em Rede</strong><br>
+          <span class="dim">Aluno aprende clusters de palavras, nao listas isoladas</span>
+        </div>
+        <div style="padding:12px; background:var(--bg2); border-radius:6px; margin-bottom:10px; border-left:4px solid var(--yellow);">
+          <strong class="yellow">Revisao Inteligente</strong><br>
+          <span class="dim">Espacamento baseado em frequencia e relacoes no grafo</span>
+        </div>
+        <div style="padding:12px; background:var(--bg2); border-radius:6px; border-left:4px solid var(--blue);">
+          <strong class="blue">Spring Data Neo4j</strong><br>
+          <span class="dim">Integrado ao Backend via repositories tipados</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10: Heatmap de Fluencia -->
+<div class="slide" data-slide="9">
+  <h2>Heatmap de Fluencia</h2>
+  <p class="dim center" style="margin-bottom:30px;">Tracking de vocabulario com espacamento inteligente</p>
+  <div class="side-by-side">
+    <div>
+      <h3>Como Funciona</h3>
+      <div style="margin-top:10px;">
+        <div style="padding:12px; background:var(--bg2); border-radius:6px; margin-bottom:10px; border-left:4px solid var(--green);">
+          <strong class="highlight">1. Coleta</strong><br>
+          <span class="dim">Cada pronuncia analisada atualiza contadores por palavra no MongoDB</span>
+        </div>
+        <div style="padding:12px; background:var(--bg2); border-radius:6px; margin-bottom:10px; border-left:4px solid var(--cyan);">
+          <strong class="cyan">2. Bulk Write</strong><br>
+          <span class="dim">Atualizacao eficiente: $inc count, $set last_stress_score</span>
+        </div>
+        <div style="padding:12px; background:var(--bg2); border-radius:6px; border-left:4px solid var(--yellow);">
+          <strong class="yellow">3. Visualizacao</strong><br>
+          <span class="dim">Mapa de calor mostra palavras dominadas vs palavras que precisam pratica</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3>Exemplo de Heatmap</h3>
+      <div class="heatmap-grid" style="margin-top:10px;">
+        <div class="heatmap-cell" style="background:rgba(0,255,136,0.4); color:var(--green);">have</div>
+        <div class="heatmap-cell" style="background:rgba(0,255,136,0.6); color:var(--green);">played</div>
+        <div class="heatmap-cell" style="background:rgba(255,204,0,0.3); color:var(--yellow);">scored</div>
+        <div class="heatmap-cell" style="background:rgba(255,68,68,0.3); color:var(--red);">achieved</div>
+        <div class="heatmap-cell" style="background:rgba(0,255,136,0.8); color:var(--bg);">the</div>
+        <div class="heatmap-cell" style="background:rgba(0,255,136,0.5); color:var(--green);">football</div>
+        <div class="heatmap-cell" style="background:rgba(255,68,68,0.2); color:var(--red);">championship</div>
+        <div class="heatmap-cell" style="background:rgba(255,204,0,0.4); color:var(--yellow);">since</div>
+        <div class="heatmap-cell" style="background:rgba(0,255,136,0.3); color:var(--green);">team</div>
+        <div class="heatmap-cell" style="background:rgba(255,204,0,0.2); color:var(--yellow);">won</div>
+      </div>
+      <div style="margin-top:16px; font-size:0.85em;">
+        <span class="highlight">Verde</span> = Dominado &nbsp;
+        <span class="yellow">Amarelo</span> = Praticando &nbsp;
+        <span class="red">Vermelho</span> = Precisa revisar
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 11: Seguranca -->
+<div class="slide" data-slide="10">
+  <h2>Seguranca da Plataforma</h2>
+  <table style="margin-top:20px;">
+    <thead>
+      <tr><th>Ameaca</th><th>Controle Implementado</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Input Injection</td><td>@NotBlank, @Size &mdash; validacao de todos os parametros no Backend</td><td><span class="badge badge-green">Mitigado</span></td></tr>
+      <tr><td>Upload Malicioso</td><td>Limite 10MB, arquivos temporarios, validacao de tipo WAV/MP3</td><td><span class="badge badge-green">Mitigado</span></td></tr>
+      <tr><td>CORS Restritivo</td><td>Apenas origens configuradas (Streamlit, Backend)</td><td><span class="badge badge-green">Mitigado</span></td></tr>
+      <tr><td>Security Headers</td><td>HSTS, X-Frame-Options DENY, X-Content-Type-Options, CSP estrita, Referrer-Policy, Permissions-Policy, COOP, CORP</td><td><span class="badge badge-green">Mitigado</span></td></tr>
+      <tr><td>Connection Pooling</td><td>MongoDB Motor: maxPoolSize=10, minPoolSize=2; Neo4j: max-pool=50</td><td><span class="badge badge-green">Mitigado</span></td></tr>
+      <tr><td>Info Leakage</td><td>Stack traces ocultos, /docs e /openapi desabilitados em producao, header Server removido</td><td><span class="badge badge-green">Mitigado</span></td></tr>
+      <tr><td>Abuso de API LLM</td><td>SlowAPI rate-limit 30/min por IP (X-Forwarded-For aware)</td><td><span class="badge badge-green">Mitigado</span></td></tr>
+      <tr><td>SSRF / Model injection</td><td>Whitelist provider+model em config; Pydantic regex; api_base nao vem do cliente</td><td><span class="badge badge-green">Mitigado</span></td></tr>
+      <tr><td>Container hardening</td><td>Usuario nao-root, tini PID 1, healthcheck, GPU opcional</td><td><span class="badge badge-green">Mitigado</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SLIDE 12: Encerramento -->
+<div class="slide" data-slide="11">
+  <div class="cta-box">
+    <h1 class="glow" style="font-size:2.5em; margin-bottom:20px;">LinguistFlow AI</h1>
+    <p style="font-size:1.2em; margin-bottom:30px;">Aprendizado Adaptativo de Idiomas com IA</p>
+    <div style="display:flex; justify-content:center; gap:30px; margin-bottom:30px;">
+      <div style="text-align:center;">
+        <div class="highlight" style="font-size:2em;">Lessons</div>
+        <div class="dim">Aulas Adaptativas</div>
+      </div>
+      <div style="text-align:center;">
+        <div class="highlight" style="font-size:2em;">Speech</div>
+        <div class="dim">Analise de Pronuncia</div>
+      </div>
+      <div style="text-align:center;">
+        <div class="highlight" style="font-size:2em;">Graph</div>
+        <div class="dim">Knowledge Graph</div>
+      </div>
+    </div>
+    <p class="dim" style="font-size:0.95em;">Streamlit + FastAPI + LiteLLM + Whisper + Ollama + Neo4j</p>
+    <div style="margin-top:30px; display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+      <span class="badge badge-green" style="font-size:0.9em; padding:6px 16px;">FastAPI</span>
+      <span class="badge badge-green" style="font-size:0.9em; padding:6px 16px;">LiteLLM</span>
+      <span class="badge badge-green" style="font-size:0.9em; padding:6px 16px;">Whisper</span>
+      <span class="badge badge-green" style="font-size:0.9em; padding:6px 16px;">Ollama</span>
+      <span class="badge badge-green" style="font-size:0.9em; padding:6px 16px;">Neo4j</span>
+      <span class="badge badge-green" style="font-size:0.9em; padding:6px 16px;">MongoDB</span>
+      <span class="badge badge-green" style="font-size:0.9em; padding:6px 16px;">Streamlit</span>
+    </div>
+  </div>
+</div>
+
+</div><!-- .slides -->
+
+<script>
+// Slide navigation
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const progress = document.getElementById('progress');
+  const counter = document.getElementById('slide-counter');
+  let current = 0;
+  const total = slides.length;
+
+  function update() {
+    slides.forEach(function(s, i) {
+      s.classList.remove('active', 'exit-left');
+      if (i === current) s.classList.add('active');
+      else if (i < current) s.classList.add('exit-left');
+    });
+    progress.style.width = ((current + 1) / total * 100) + '%';
+    counter.textContent = (current + 1) + ' / ' + total;
+  }
+
+  function next() { if (current < total - 1) { current++; update(); } }
+  function prev() { if (current > 0) { current--; update(); } }
+
+  // Keyboard
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); next(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'Backspace') { e.preventDefault(); prev(); }
+    else if (e.key === 'Home') { current = 0; update(); }
+    else if (e.key === 'End') { current = total - 1; update(); }
+  });
+
+  // Touch/swipe
+  var touchStartX = 0;
+  document.addEventListener('touchstart', function(e) { touchStartX = e.changedTouches[0].screenX; });
+  document.addEventListener('touchend', function(e) {
+    var diff = touchStartX - e.changedTouches[0].screenX;
+    if (Math.abs(diff) > 50) { diff > 0 ? next() : prev(); }
+  });
+
+  // Click sides
+  document.addEventListener('click', function(e) {
+    var w = window.innerWidth;
+    if (e.clientX > w * 0.75) next();
+    else if (e.clientX < w * 0.25) prev();
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>

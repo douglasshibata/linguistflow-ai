@@ -1,0 +1,159 @@
+services:
+  db-mongo:
+    image: mongo:7.0.16
+    container_name: linguist-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME:-linguist_admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:?MONGO_PASSWORD must be set}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend-polyglot:
+    build: ./frontend-polyglot
+    container_name: linguist-polyglot
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  db-neo4j:
+    image: neo4j:5.26.1-community
+    container_name: linguist-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:?NEO4J_PASSWORD must be set}
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  api:
+    build: ./api
+    container_name: linguist-api
+    ports:
+      - "8000:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - MONGO_URI=mongodb://${MONGO_USERNAME:-linguist_admin}:${MONGO_PASSWORD:?MONGO_PASSWORD must be set}@db-mongo:27017/?authSource=admin
+      - MONGO_DATABASE=${MONGO_DATABASE:-linguistflow}
+      - NEO4J_URI=bolt://db-neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:?NEO4J_PASSWORD must be set}
+      - CORS_ORIGINS=${FRONTEND_ORIGIN:-http://localhost:8501}
+      - RATE_LIMIT=${RATE_LIMIT:-30/minute}
+      - MAX_UPLOAD_BYTES=${MAX_UPLOAD_BYTES:-10485760}
+      - WHISPER_MODEL=${WHISPER_MODEL:-base}
+      - LLM_DEFAULT_PROVIDER=${LLM_DEFAULT_PROVIDER:-ollama}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.7}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-1024}
+      - LLM_TIMEOUT_SECONDS=${LLM_TIMEOUT_SECONDS:-120}
+      - LLM_OPENAI_ENABLED=${LLM_OPENAI_ENABLED:-false}
+      - LLM_OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - LLM_OPENAI_MODELS=${LLM_OPENAI_MODELS:-gpt-4o-mini,gpt-4o}
+      - LLM_CLAUDE_ENABLED=${LLM_CLAUDE_ENABLED:-false}
+      - LLM_CLAUDE_API_KEY=${ANTHROPIC_API_KEY:-}
+      - LLM_CLAUDE_MODELS=${LLM_CLAUDE_MODELS:-claude-haiku-4-5,claude-sonnet-4-6,claude-opus-4-7}
+      - LLM_GEMINI_ENABLED=${LLM_GEMINI_ENABLED:-false}
+      - LLM_GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - LLM_GEMINI_MODELS=${LLM_GEMINI_MODELS:-gemini-2.0-flash,gemini-2.5-pro,gemini-1.5-flash}
+      - LLM_OPENROUTER_ENABLED=${LLM_OPENROUTER_ENABLED:-false}
+      - LLM_OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - LLM_OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      - LLM_OPENROUTER_MODELS=${LLM_OPENROUTER_MODELS:-openai/gpt-4o-mini,anthropic/claude-3.5-sonnet,meta-llama/llama-3.1-70b-instruct}
+      - LLM_OLLAMA_ENABLED=${LLM_OLLAMA_ENABLED:-true}
+      - LLM_OLLAMA_BASE_URL=${OLLAMA_URL:-http://ollama:11434}
+      - LLM_OLLAMA_MODELS=${LLM_OLLAMA_MODELS:-llama3.2,mistral,qwen2.5,phi3}
+    depends_on:
+      db-mongo:
+        condition: service_healthy
+      db-neo4j:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  frontend:
+    build: ./frontend
+    container_name: linguist-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8501/_stcore/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  ollama:
+    build: ./ollama
+    container_name: linguist-ollama
+    profiles: ["local-llm"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  ollama-model-puller:
+    build: ./ollama
+    container_name: linguist-ollama-puller
+    profiles: ["local-llm"]
+    environment:
+      - OLLAMA_HOST=ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+    command: ["pull", "llama3.2"]
+    restart: "no"
+
+volumes:
+  mongo_data:
+  neo4j_data:
+  ollama_data:

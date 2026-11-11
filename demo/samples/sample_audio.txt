@@ -1,0 +1,48 @@
+# LinguistFlow AI - Sample Audio para Demo
+# ==========================================
+#
+# O script demo.sh precisa de um arquivo WAV para testar o endpoint /analyze-speech.
+# Como arquivos binarios nao devem ser versionados no Git, siga as instrucoes abaixo
+# para gerar um audio de teste.
+#
+# Opcao 1: Gerar WAV sintetico com Python
+# ----------------------------------------
+# python3 -c "
+# import wave, struct, math
+# duration = 3  # segundos
+# sample_rate = 16000
+# samples = []
+# for i in range(duration * sample_rate):
+#     t = i / sample_rate
+#     sample = int(32767 * 0.3 * math.sin(2 * math.pi * 440 * t))
+#     samples.append(sample)
+# with wave.open('sample_audio.wav', 'w') as f:
+#     f.setnchannels(1)
+#     f.setsampwidth(2)
+#     f.setframerate(sample_rate)
+#     f.writeframes(struct.pack('<' + 'h' * len(samples), *samples))
+# print('sample_audio.wav gerado com sucesso')
+# "
+#
+# Opcao 2: Gravar sua propria voz
+# --------------------------------
+# Use qualquer gravador de audio e salve como WAV 16kHz mono.
+# Exemplo com ffmpeg:
+#   ffmpeg -f alsa -i default -ar 16000 -ac 1 -t 5 sample_audio.wav
+#
+# Exemplo com SoX:
+#   rec -r 16000 -c 1 sample_audio.wav trim 0 5
+#
+# Opcao 3: Usar texto para fala (TTS)
+# ------------------------------------
+# pip install gTTS pydub
+# python3 -c "
+# from gtts import gTTS
+# tts = gTTS('I have played football since I was five years old', lang='en')
+# tts.save('sample_audio_mp3.mp3')
+# # Converter para WAV com ffmpeg:
+# # ffmpeg -i sample_audio_mp3.mp3 -ar 16000 -ac 1 sample_audio.wav
+# "
+#
+# Nota: O demo.sh tentara gerar automaticamente um WAV sintetico se nenhum
+# arquivo sample_audio.wav for encontrado neste diretorio.
